@@ -13,11 +13,21 @@ const props = defineProps({
 
 const emit = defineEmits(["save"]);
 
-const draft = reactive({ ...props.settings });
+/**
+ * Copies settings so that editing the draft never mutates the parent's state.
+ *
+ * @param {object} settings Settings from the main process.
+ * @returns {object} Independent copy.
+ */
+function copySettings(settings) {
+  return { ...settings, categories: [...settings.categories], cities: [...settings.cities] };
+}
+
+const draft = reactive(copySettings(props.settings));
 
 watch(
   () => props.settings,
-  (next) => Object.assign(draft, next)
+  (next) => Object.assign(draft, copySettings(next))
 );
 
 const categoryGroups = computed(() => {
@@ -41,7 +51,7 @@ function toggle(list, slug) {
 }
 
 function save() {
-  emit("save", { ...draft, categories: [...draft.categories], cities: [...draft.cities] });
+  emit("save", copySettings(draft));
 }
 </script>
 

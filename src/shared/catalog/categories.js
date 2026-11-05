@@ -39,12 +39,3 @@ export const CATEGORIES = [
   { slug: "kiralik-devre-mulk", label: "Kiralık Devre Mülk", group: "Devre Mülk" }
 ];
 
-/**
- * Looks a category up by slug.
- *
- * @param {string} slug Category slug.
- * @returns {Category | undefined} The category, if known.
- */
-export function findCategory(slug) {
-  return CATEGORIES.find((category) => category.slug === slug);
-}

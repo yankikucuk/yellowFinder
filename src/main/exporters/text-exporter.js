@@ -5,7 +5,7 @@
  */
 
 /**
- * @param {import("../results-store.js").ListingRecord[]} records Listings to export.
+ * @param {import("../storage/results-store.js").ListingRecord[]} records Listings to export.
  * @returns {string} File content.
  */
 export function renderText(records) {

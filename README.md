@@ -31,8 +31,9 @@ in the app tries to hide itself or to work around such pages. See
 src/
   main/                 Electron main process
     index.js            Entry point, windows, IPC wiring
-    settings-store.js   Settings persisted under userData/settings.json
-    results-store.js    Found listings persisted under userData/results.json
+    storage/
+      settings-store.js Settings persisted under userData/settings.json
+      results-store.js  Listings and visit history in userData/results.sqlite
     scheduler.js        Interval based scan trigger
     updater.js          electron-updater wiring (GitHub releases)
     ipc-channels.js     IPC channel names
@@ -42,7 +43,7 @@ src/
       page-scripts.js   Read-only DOM scripts executed inside the site pages
       selectors.js      Every CSS selector and page marker in one place
       listing-classifier.js  Owner vs agency decision, phone collection
-    exporters/          TXT, CSV and PDF writers
+    exporters/          TXT, CSV and PDF writers (pdf-document.js is the printable HTML)
   preload/index.cjs     Context bridge exposed to the renderer as window.yellowFinder
   renderer/             Vue 3 interface built by Vite into dist/renderer
   shared/               Code used by both sides: catalogs, URL builder, phone parsing

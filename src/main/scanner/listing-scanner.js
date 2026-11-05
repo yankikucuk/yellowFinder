@@ -9,7 +9,7 @@
  * @module main/scanner/listing-scanner
  */
 
-import { buildSearchUrl, absoluteListingUrl, listingIdFromUrl } from "../../shared/search-url.js";
+import { buildSearchUrl, absoluteListingUrl, listingIdFromUrl, PAGE_SIZE } from "../../shared/search-url.js";
 import { classifySeller, collectPhones } from "./listing-classifier.js";
 
 /**
@@ -32,13 +32,24 @@ function randomPause(minSeconds, maxSeconds) {
 }
 
 /**
+ * Resolves the listing id of a result row: the row attribute first, the
+ * detail link as fallback.
+ *
+ * @param {{id: string, href: string}} row Result row.
+ * @returns {string | null} Listing id, or null when neither source has one.
+ */
+function listingIdOfRow(row) {
+  return row.id || listingIdFromUrl(absoluteListingUrl(row.href));
+}
+
+/**
  * Orchestrates scans over a {@link SiteSession}.
  */
 export class ListingScanner {
   /**
    * @param {object} dependencies Collaborators.
    * @param {import("./site-session.js").SiteSession} dependencies.session Site window wrapper.
-   * @param {import("../results-store.js").ResultsStore} dependencies.results Listing store.
+   * @param {import("../storage/results-store.js").ResultsStore} dependencies.results Listing store.
    * @param {(event: ScanEvent) => void} dependencies.onEvent Progress sink.
    */
   constructor({ session, results, onEvent }) {
@@ -60,7 +71,7 @@ export class ListingScanner {
    * Runs a scan with the given settings. Resolves when it finished, was
    * cancelled, or had to stop because the site asked for user interaction.
    *
-   * @param {import("../settings-store.js").Settings} settings Current settings.
+   * @param {import("../storage/settings-store.js").Settings} settings Current settings.
    * @returns {Promise<{newListings: number, visited: number, stoppedByBlock: boolean}>} Summary.
    */
   async run(settings) {
@@ -118,7 +129,7 @@ export class ListingScanner {
         });
         break;
       }
-      const fresh = rows.filter((row) => row.id && !this.results.shouldSkip(row.id));
+      const fresh = rows.filter((row) => !this.results.shouldSkip(listingIdOfRow(row) ?? ""));
       this.onEvent({ level: "info", message: `${rows.length} ilan listelendi, ${fresh.length} tanesi yeni.` });
       for (const row of fresh) {
         if (this.cancelRequested) {
@@ -132,7 +143,7 @@ export class ListingScanner {
           return "stop";
         }
       }
-      if (rows.length < 20) {
+      if (rows.length < PAGE_SIZE) {
         break;
       }
       await randomPause(settings.minDelaySeconds, settings.maxDelaySeconds);
@@ -147,7 +158,11 @@ export class ListingScanner {
    */
   async #visitListing({ row, categorySlug, citySlug, summary }) {
     const url = absoluteListingUrl(row.href);
-    const id = row.id || listingIdFromUrl(url);
+    const id = listingIdOfRow(row);
+    if (!id) {
+      this.onEvent({ level: "warning", message: `İlan kimliği okunamadı, atlandı: ${url}` });
+      return "continue";
+    }
     const blocked = await this.#navigateOrReport(url);
     if (blocked === null) {
       return "continue";

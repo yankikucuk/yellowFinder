@@ -43,10 +43,10 @@ import { existsSync, readFileSync, renameSync } from "node:fs";
  */
 
 /** Default days before a listing without a visible phone number is opened again. */
-export const DEFAULT_RETRY_NO_PHONE_DAYS = 3;
+const DEFAULT_RETRY_NO_PHONE_DAYS = 3;
 
 /** Default days a visit row is remembered before it is purged. */
-export const DEFAULT_VISIT_RETENTION_DAYS = 180;
+const DEFAULT_VISIT_RETENTION_DAYS = 180;
 
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS listings (
@@ -182,14 +182,6 @@ export class ResultsStore {
     return Number(this.statements.purgeVisits.run(cutoff).changes);
   }
 
-  /** @returns {{listings: number, visits: number}} Row counts, for the status panel. */
-  counts() {
-    return {
-      listings: Number(this.statements.countListings.get().count),
-      visits: Number(this.statements.countVisits.get().count)
-    };
-  }
-
   /** Removes every listing and every visit. */
   clear() {
     this.database.exec("DELETE FROM listings; DELETE FROM visits;");
@@ -248,9 +240,7 @@ export class ResultsStore {
         INSERT INTO visits (id, outcome, visited_at, retry_after) VALUES (?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET outcome = excluded.outcome, visited_at = excluded.visited_at, retry_after = excluded.retry_after
       `),
-      purgeVisits: this.database.prepare("DELETE FROM visits WHERE outcome != 'kept' AND visited_at < ?"),
-      countListings: this.database.prepare("SELECT COUNT(*) AS count FROM listings"),
-      countVisits: this.database.prepare("SELECT COUNT(*) AS count FROM visits")
+      purgeVisits: this.database.prepare("DELETE FROM visits WHERE outcome != 'kept' AND visited_at < ?")
     };
   }
 }

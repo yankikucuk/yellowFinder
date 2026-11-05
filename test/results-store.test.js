@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ResultsStore } from "../src/main/results-store.js";
+import { ResultsStore } from "../src/main/storage/results-store.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -58,7 +58,6 @@ test("listings survive a round trip through the file and read back as records", 
 
   const second = new ResultsStore(path);
   assert.deepEqual(second.all(), [sampleListing]);
-  assert.deepEqual(second.counts(), { listings: 1, visits: 1 });
   second.close();
 });
 
@@ -74,7 +73,7 @@ test("old visits are purged on open, kept listings stay", () => {
   const second = storeWithClock(path, clock);
   assert.equal(second.shouldSkip("2"), false, "agency visit expired");
   assert.equal(second.shouldSkip("1"), true, "kept listing never expires");
-  assert.deepEqual(second.counts(), { listings: 1, visits: 1 });
+  assert.equal(second.all().length, 1);
   second.close();
 });
 
@@ -98,6 +97,8 @@ test("clear removes listings and visits", () => {
   store.upsert(sampleListing);
   store.markSkipped("2", "agency");
   store.clear();
-  assert.deepEqual(store.counts(), { listings: 0, visits: 0 });
+  assert.deepEqual(store.all(), []);
+  assert.equal(store.shouldSkip("1"), false);
+  assert.equal(store.shouldSkip("2"), false);
   store.close();
 });

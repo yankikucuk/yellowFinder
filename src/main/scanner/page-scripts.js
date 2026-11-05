@@ -42,6 +42,8 @@ function detectBlockingPage(markers) {
       return { blocked: true, reason: `title:${fragment}` };
     }
   }
+  // Body markers such as "Üye Girişi" also appear in the header of normal pages,
+  // so they only count on short pages, which is what login and challenge pages are.
   for (const fragment of markers.bodyFragments) {
     if (bodyText.includes(fragment) && bodyText.length < 4000) {
       return { blocked: true, reason: `body:${fragment}` };
@@ -147,6 +149,3 @@ export const PAGE_SCRIPTS = Object.freeze({
   collectSearchRows: toExpression(collectSearchRows, SEARCH_PAGE),
   collectDetailData: toExpression(collectDetailData, DETAIL_PAGE)
 });
-
-/** Exported for unit tests; not used by the scanner directly. */
-export const PAGE_FUNCTIONS = Object.freeze({ detectBlockingPage, collectSearchRows, collectDetailData });

@@ -12,8 +12,8 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SettingsStore } from "./settings-store.js";
-import { ResultsStore } from "./results-store.js";
+import { SettingsStore } from "./storage/settings-store.js";
+import { ResultsStore } from "./storage/results-store.js";
 import { SiteSession } from "./scanner/site-session.js";
 import { ListingScanner } from "./scanner/listing-scanner.js";
 import { ScanScheduler } from "./scheduler.js";

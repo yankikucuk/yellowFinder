@@ -82,12 +82,3 @@ export function extractPhoneNumbers(text) {
   return [...found];
 }
 
-/**
- * Tells whether a canonical number belongs to a mobile operator (5xx).
- *
- * @param {string} canonical Number in "0XXX XXX XX XX" form.
- * @returns {boolean} True for mobile numbers.
- */
-export function isMobileNumber(canonical) {
-  return typeof canonical === "string" && canonical.startsWith("05");
-}

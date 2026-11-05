@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { sanitiseSettings, SettingsStore, DEFAULT_SETTINGS } from "../src/main/settings-store.js";
+import { sanitiseSettings, SettingsStore, DEFAULT_SETTINGS } from "../src/main/storage/settings-store.js";
 
 test("sanitise clamps numbers and drops unknown keys", () => {
   const settings = sanitiseSettings({ intervalMinutes: 1, maxPagesPerSearch: 999, minDelaySeconds: 50, maxDelaySeconds: 3, bogus: true });

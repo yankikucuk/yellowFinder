@@ -98,12 +98,3 @@ export const CITIES = [
   { slug: "zonguldak", label: "Zonguldak" }
 ];
 
-/**
- * Looks a city up by slug.
- *
- * @param {string} slug City slug.
- * @returns {City | undefined} The city, if known.
- */
-export function findCity(slug) {
-  return CITIES.find((city) => city.slug === slug);
-}

@@ -23,7 +23,7 @@ const FORMAT_FILTERS = Object.freeze({
  * Produces the file content for a format.
  *
  * @param {ExportFormat} format Target format.
- * @param {import("../results-store.js").ListingRecord[]} records Listings to export.
+ * @param {import("../storage/results-store.js").ListingRecord[]} records Listings to export.
  * @returns {Promise<string | Buffer>} Content.
  */
 export async function renderExport(format, records) {
@@ -45,7 +45,7 @@ export async function renderExport(format, records) {
  *
  * @param {import("electron").BrowserWindow} parent Window that owns the dialog.
  * @param {ExportFormat} format Target format.
- * @param {import("../results-store.js").ListingRecord[]} records Listings to export.
+ * @param {import("../storage/results-store.js").ListingRecord[]} records Listings to export.
  * @returns {Promise<string | null>} Saved file path.
  */
 export async function exportToFile(parent, format, records) {

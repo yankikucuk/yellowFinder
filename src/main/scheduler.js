@@ -3,7 +3,9 @@
  *
  * The timer is recreated whenever the interval or the auto scan flag changes.
  * A tick that arrives while a scan is still running is skipped rather than
- * queued, so scans never overlap.
+ * queued, so scans never overlap. Each `configure` call starts a new timer
+ * generation; a scan that finishes under an older generation does not arm
+ * a second timer.
  *
  * @module main/scheduler
  */
@@ -20,6 +22,7 @@ export class ScanScheduler {
     this.timer = null;
     this.nextRunAt = null;
     this.intervalMinutes = 0;
+    this.generation = 0;
   }
 
   /**
@@ -36,8 +39,9 @@ export class ScanScheduler {
     this.#arm();
   }
 
-  /** Clears the timer. */
+  /** Clears the timer and invalidates the current generation. */
   stop() {
+    this.generation += 1;
     if (this.timer !== null) {
       clearTimeout(this.timer);
       this.timer = null;
@@ -51,6 +55,7 @@ export class ScanScheduler {
   }
 
   #arm() {
+    const generation = this.generation;
     const delayMs = this.intervalMinutes * 60 * 1000;
     this.nextRunAt = new Date(Date.now() + delayMs);
     this.timer = setTimeout(async () => {
@@ -58,7 +63,7 @@ export class ScanScheduler {
       try {
         await this.runScan();
       } finally {
-        if (this.intervalMinutes > 0 && this.nextRunAt !== null) {
+        if (generation === this.generation) {
           this.#arm();
         }
       }

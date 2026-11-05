@@ -15,7 +15,7 @@ import { PAGE_SCRIPTS } from "./page-scripts.js";
 import { SITE_ORIGIN } from "../../shared/search-url.js";
 
 /** Session partition shared by the login window and the scan window. */
-export const SITE_PARTITION = "persist:sahibinden";
+const SITE_PARTITION = "persist:sahibinden";
 
 /** How long a page may take to finish loading before the scan gives up on it. */
 const LOAD_TIMEOUT_MS = 45_000;
