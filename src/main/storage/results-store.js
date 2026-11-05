@@ -188,7 +188,7 @@ export class ResultsStore {
   }
 
   /**
-   * Imports the JSON file used by versions before 0.2.0 and renames it so
+   * Imports the JSON file written by version 0.1.0 and renames it so
    * the import runs once. Kept listings become "kept" visits; the old
    * undifferentiated skip list becomes "no-phone" visits that are retried,
    * because the old file did not record why a listing was skipped.
@@ -204,17 +204,28 @@ export class ResultsStore {
     try {
       parsed = JSON.parse(readFileSync(legacyJsonPath, "utf8"));
     } catch {
+      parsed = null;
+    }
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
       renameSync(legacyJsonPath, `${legacyJsonPath}.unreadable`);
       return 0;
     }
-    let imported = 0;
-    for (const record of parsed.records ?? []) {
-      this.upsert(record);
-      imported += 1;
+    const records = Array.isArray(parsed.records) ? parsed.records.filter((record) => record && typeof record.id === "string") : [];
+    const skippedIds = Array.isArray(parsed.skippedIds) ? parsed.skippedIds.filter((id) => typeof id === "string") : [];
+    this.database.exec("BEGIN");
+    try {
+      for (const record of records) {
+        this.upsert(record);
+      }
+      for (const id of skippedIds) {
+        this.markSkipped(id, "no-phone");
+      }
+      this.database.exec("COMMIT");
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
     }
-    for (const id of parsed.skippedIds ?? []) {
-      this.markSkipped(id, "no-phone");
-    }
+    const imported = records.length;
     renameSync(legacyJsonPath, `${legacyJsonPath}.imported`);
     return imported;
   }

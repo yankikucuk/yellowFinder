@@ -21,7 +21,9 @@ GitHub releases.
 
 The app drives a normal, visible Chromium window with your own session.
 When the site shows a login page or a verification step, the scan stops,
-the window comes to the front and the log asks you to complete it. Nothing
+the window comes to the front and the log asks you to complete it. Automatic
+scans are held until you start the next one by hand, so the window is not
+navigated away while you are using it. Nothing
 in the app tries to hide itself or to work around such pages. See
 [docs/adr/0002-site-access-policy.md](docs/adr/0002-site-access-policy.md).
 

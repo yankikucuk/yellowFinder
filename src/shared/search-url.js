@@ -27,16 +27,19 @@ export const PAGE_SIZE = 50;
  */
 export function buildSearchUrl({ categorySlug, citySlug, pageIndex = 0, extraQuery = "" }) {
   const url = new URL(`/${encodeURIComponent(categorySlug)}/${encodeURIComponent(citySlug)}`, SITE_ORIGIN);
-  url.searchParams.set("sorting", "date_desc");
-  url.searchParams.set("pagingSize", String(PAGE_SIZE));
-  if (pageIndex > 0) {
-    url.searchParams.set("pagingOffset", String(pageIndex * PAGE_SIZE));
-  }
+  // The user's query goes first; paging and sorting are set afterwards so a
+  // pagingOffset copied from the site cannot pin every page to the same one.
   const cleanedExtra = extraQuery.trim().replace(/^\?/, "");
   if (cleanedExtra.length > 0) {
     for (const [key, value] of new URLSearchParams(cleanedExtra)) {
       url.searchParams.set(key, value);
     }
+  }
+  url.searchParams.set("sorting", "date_desc");
+  url.searchParams.set("pagingSize", String(PAGE_SIZE));
+  url.searchParams.delete("pagingOffset");
+  if (pageIndex > 0) {
+    url.searchParams.set("pagingOffset", String(pageIndex * PAGE_SIZE));
   }
   return url.toString();
 }
@@ -61,4 +64,20 @@ export function absoluteListingUrl(href) {
 export function listingIdFromUrl(url) {
   const match = /-(\d+)\/detay/.exec(url);
   return match ? match[1] : null;
+}
+
+/**
+ * Tells whether a URL stays on the site. The scanner only follows links that
+ * do, so injected or advertising content cannot send the logged in session
+ * elsewhere.
+ *
+ * @param {string} url Absolute URL.
+ * @returns {boolean} True when the URL is on the site origin.
+ */
+export function isSiteUrl(url) {
+  try {
+    return new URL(url).origin === SITE_ORIGIN;
+  } catch {
+    return false;
+  }
 }

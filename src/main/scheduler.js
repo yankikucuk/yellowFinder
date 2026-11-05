@@ -2,8 +2,8 @@
  * Triggers scans on a fixed interval while the app is running.
  *
  * The timer is recreated whenever the interval or the auto scan flag changes.
- * A tick that arrives while a scan is still running is skipped rather than
- * queued, so scans never overlap. Each `configure` call starts a new timer
+ * The scheduler only calls the scan function; the function itself must refuse
+ * to overlap a running scan. Each `configure` call starts a new timer
  * generation; a scan that finishes under an older generation does not arm
  * a second timer.
  *
@@ -60,6 +60,7 @@ export class ScanScheduler {
     this.nextRunAt = new Date(Date.now() + delayMs);
     this.timer = setTimeout(async () => {
       this.timer = null;
+      this.nextRunAt = null;
       try {
         await this.runScan();
       } finally {

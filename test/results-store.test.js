@@ -102,3 +102,13 @@ test("clear removes listings and visits", () => {
   assert.equal(store.shouldSkip("2"), false);
   store.close();
 });
+
+test("a legacy file that is not an object is set aside instead of crashing", () => {
+  const directory = mkdtempSync(join(tmpdir(), "yellowfinder-"));
+  const legacyPath = join(directory, "results.json");
+  writeFileSync(legacyPath, "null");
+  const store = new ResultsStore(":memory:");
+  assert.equal(store.importLegacyJson(legacyPath), 0);
+  assert.equal(existsSync(`${legacyPath}.unreadable`), true);
+  store.close();
+});

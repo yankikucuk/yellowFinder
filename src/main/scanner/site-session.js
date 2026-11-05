@@ -1,11 +1,11 @@
 /**
  * Owns the browser window that visits sahibinden.com.
  *
- * The window is a normal, visible Chromium window with a persistent session
- * partition. The user logs in there once; cookies survive restarts. When the
- * site shows a login or verification page the scanner stops and waits for the
- * user to handle it in this same window. Nothing is done to hide the fact
- * that a program is driving the window.
+ * There is one window with a persistent session partition. It stays hidden
+ * while a scan runs and is shown when the user asks for it or when the site
+ * wants something from the user (login, verification). Cookies survive
+ * restarts, so the user logs in once. Nothing is done to hide the fact that
+ * a program is driving the window; see docs/adr/0002-site-access-policy.md.
  *
  * @module main/scanner/site-session
  */
@@ -14,7 +14,7 @@ import { BrowserWindow } from "electron";
 import { PAGE_SCRIPTS } from "./page-scripts.js";
 import { SITE_ORIGIN } from "../../shared/search-url.js";
 
-/** Session partition shared by the login window and the scan window. */
+/** Session partition that keeps the site's cookies on disk. */
 const SITE_PARTITION = "persist:sahibinden";
 
 /** How long a page may take to finish loading before the scan gives up on it. */
@@ -54,9 +54,14 @@ export class SiteSession {
         partition: SITE_PARTITION,
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: true
+        sandbox: true,
+        // The scan window is usually hidden; without this Chromium throttles
+        // its timers and the settle delay would wait for scripts that barely run.
+        backgroundThrottling: false
       }
     });
+    // Pop-ups from the site would open extra windows on the same session; keep everything in this one.
+    this.window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
     this.window.on("closed", () => {
       this.window = null;
     });
@@ -107,6 +112,17 @@ export class SiteSession {
   showToUser() {
     const window = this.ensureWindow(true);
     window.focus();
+  }
+
+  /**
+   * Called when a scan ends. A hidden window is parked on a blank page so
+   * the site's scripts and images do not keep memory and CPU between scans.
+   * A visible window is left alone because the user may be using it.
+   */
+  release() {
+    if (this.window && !this.window.isDestroyed() && !this.window.isVisible()) {
+      this.window.webContents.loadURL("about:blank").catch(() => {});
+    }
   }
 
   /** Closes the window. The session cookies are kept on disk. */

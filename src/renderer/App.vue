@@ -19,8 +19,23 @@ const scanState = reactive({ running: false, nextRunAt: null });
 const events = ref([]);
 const updateStatus = ref({ state: "idle", message: "" });
 
+/** Log lines kept in memory; older ones are dropped. */
 const MAX_EVENTS = 300;
+let nextEventId = 1;
 let unsubscribe = [];
+
+/**
+ * Adds a log line at the top with a stable key for list rendering.
+ *
+ * @param {{level: string, message: string, at: string}} event Event from the main process or the UI.
+ */
+function pushEvent(event) {
+  events.value.unshift({ ...event, id: nextEventId });
+  nextEventId += 1;
+  if (events.value.length > MAX_EVENTS) {
+    events.value.length = MAX_EVENTS;
+  }
+}
 
 /**
  * Pulls the initial state from the main process.
@@ -34,6 +49,7 @@ async function load() {
   results.value = bootstrap.results;
   scanState.running = bootstrap.scanRunning;
   scanState.nextRunAt = bootstrap.nextRunAt;
+  updateStatus.value = bootstrap.updateStatus;
 }
 
 async function saveSettings(partial) {
@@ -44,6 +60,20 @@ async function refreshResults() {
   results.value = await bridge.listResults();
 }
 
+/**
+ * Puts a listing found during the scan at the top of the table without
+ * fetching the whole list again. A retried listing replaces its old row.
+ *
+ * @param {object} record Listing record carried by the "found" event.
+ */
+function addFoundListing(record) {
+  const index = results.value.findIndex((existing) => existing.id === record.id);
+  if (index !== -1) {
+    results.value.splice(index, 1);
+  }
+  results.value.unshift(record);
+}
+
 async function clearResults() {
   if (window.confirm("Tüm liste silinecek. Emin misiniz?")) {
     results.value = await bridge.clearResults();
@@ -51,9 +81,13 @@ async function clearResults() {
 }
 
 async function exportResults(format) {
-  const path = await bridge.exportResults(format);
-  if (path) {
-    events.value.unshift({ level: "info", message: `Dışa aktarıldı: ${path}`, at: new Date().toISOString() });
+  try {
+    const path = await bridge.exportResults(format);
+    if (path) {
+      pushEvent({ level: "info", message: `Dışa aktarıldı: ${path}`, at: new Date().toISOString() });
+    }
+  } catch (error) {
+    pushEvent({ level: "error", message: `Dışa aktarma başarısız: ${error.message}`, at: new Date().toISOString() });
   }
 }
 
@@ -61,18 +95,16 @@ onMounted(async () => {
   await load();
   unsubscribe = [
     bridge.onScanEvent((event) => {
-      events.value.unshift(event);
-      if (events.value.length > MAX_EVENTS) {
-        events.value.length = MAX_EVENTS;
-      }
-      if (event.level === "found") {
-        refreshResults();
+      pushEvent(event);
+      if (event.level === "found" && event.data) {
+        addFoundListing(event.data);
       }
     }),
     bridge.onScanState((state) => {
+      const wasRunning = scanState.running;
       scanState.running = state.running;
       scanState.nextRunAt = state.nextRunAt;
-      if (!state.running) {
+      if (wasRunning && !state.running) {
         refreshResults();
       }
     }),

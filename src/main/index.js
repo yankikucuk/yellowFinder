@@ -22,17 +22,28 @@ import { createUpdater } from "./updater.js";
 import { INVOKE, EVENTS } from "./ipc-channels.js";
 import { CITIES } from "../shared/catalog/cities.js";
 import { CATEGORIES } from "../shared/catalog/categories.js";
+import { SITE_ORIGIN } from "../shared/search-url.js";
 
 const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const RENDERER_INDEX = join(currentDirectory, "..", "..", "dist", "renderer", "index.html");
 const PRELOAD_SCRIPT = join(currentDirectory, "..", "preload", "index.cjs");
 
-/** Started with `--smoke-test`: print renderer console output and quit after a few seconds (used by developers and CI to verify the app boots). */
+/** Started with `--smoke-test`: print renderer console output and quit after a few seconds (used by developers to verify the app boots). */
 const SMOKE_TEST = process.argv.includes("--smoke-test");
 const SMOKE_TEST_DURATION_MS = 6_000;
 
 /** @type {BrowserWindow | null} */
 let controlWindow = null;
+
+/** Last updater status, replayed to the renderer in the bootstrap payload because the first check runs before it subscribes. */
+let lastUpdateStatus = { state: "idle", message: "" };
+
+/**
+ * True after a scan stopped on a login or verification page. Automatic scans
+ * are held until the user starts one by hand, so the window the user is
+ * working in is not navigated away from under them.
+ */
+let waitingForUser = false;
 
 const settingsStore = new SettingsStore(join(app.getPath("userData"), "settings.json"));
 const resultsStore = new ResultsStore(join(app.getPath("userData"), "results.sqlite"));
@@ -51,6 +62,16 @@ function broadcast(channel, payload) {
   }
 }
 
+/**
+ * Emits a scan log line with a timestamp.
+ *
+ * @param {"info" | "warning" | "error" | "blocked" | "found" | "done"} level Event kind.
+ * @param {string} message Message in Turkish.
+ */
+function logScanEvent(level, message) {
+  broadcast(EVENTS.scanEvent, { level, message, at: new Date().toISOString() });
+}
+
 const scanner = new ListingScanner({
   session: siteSession,
   results: resultsStore,
@@ -60,24 +81,34 @@ const scanner = new ListingScanner({
 /**
  * Runs a scan unless one is already running, and keeps the renderer informed.
  *
+ * @param {"manual" | "scheduled"} trigger Who asked for the scan.
  * @returns {Promise<void>} Resolves when the scan ended.
  */
-async function runScan() {
+async function runScan(trigger) {
   if (scanner.running) {
     return;
   }
+  if (trigger === "scheduled" && waitingForUser) {
+    logScanEvent("info", "Otomatik tarama bekletildi: site penceresinde giriş veya doğrulama tamamlanmayı bekliyor.");
+    return;
+  }
+  waitingForUser = false;
   broadcast(EVENTS.scanState, { running: true, nextRunAt: scheduler.getNextRunAt() });
   try {
-    await scanner.run(settingsStore.get());
+    const summary = await scanner.run(settingsStore.get());
+    waitingForUser = summary.stoppedByBlock;
   } catch (error) {
-    broadcast(EVENTS.scanEvent, { level: "error", message: `Tarama hatası: ${error.message}`, at: new Date().toISOString() });
+    logScanEvent("error", `Tarama hatası: ${error.message}`);
   } finally {
     broadcast(EVENTS.scanState, { running: false, nextRunAt: scheduler.getNextRunAt() });
   }
 }
 
-const scheduler = new ScanScheduler(runScan);
-const updater = createUpdater((status) => broadcast(EVENTS.updateStatus, status));
+const scheduler = new ScanScheduler(() => runScan("scheduled"));
+const updater = createUpdater((status) => {
+  lastUpdateStatus = status;
+  broadcast(EVENTS.updateStatus, status);
+});
 
 /**
  * Creates the control window that hosts the Vue interface.
@@ -97,6 +128,7 @@ function createControlWindow() {
       sandbox: true
     }
   });
+  controlWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   controlWindow.loadFile(RENDERER_INDEX);
   if (SMOKE_TEST) {
     attachSmokeTest(controlWindow);
@@ -143,13 +175,18 @@ function registerIpc() {
     categories: CATEGORIES,
     results: resultsStore.all(),
     scanRunning: scanner.running,
-    nextRunAt: scheduler.getNextRunAt()
+    nextRunAt: scheduler.getNextRunAt(),
+    updateStatus: lastUpdateStatus
   }));
 
   ipcMain.handle(INVOKE.updateSettings, (_event, partial) => {
+    const before = settingsStore.get();
     const settings = settingsStore.update(partial);
-    scheduler.configure(settings);
-    broadcast(EVENTS.scanState, { running: scanner.running, nextRunAt: scheduler.getNextRunAt() });
+    // Only timing changes restart the countdown; editing categories keeps the next run where it was.
+    if (before.autoScan !== settings.autoScan || before.intervalMinutes !== settings.intervalMinutes) {
+      scheduler.configure(settings);
+      broadcast(EVENTS.scanState, { running: scanner.running, nextRunAt: scheduler.getNextRunAt() });
+    }
     return settings;
   });
 
@@ -161,7 +198,7 @@ function registerIpc() {
   });
 
   ipcMain.handle(INVOKE.startScan, () => {
-    runScan();
+    runScan("manual");
     return true;
   });
 
@@ -171,7 +208,11 @@ function registerIpc() {
   });
 
   ipcMain.handle(INVOKE.openSite, async () => {
-    await siteSession.openForUser();
+    try {
+      await siteSession.openForUser();
+    } catch (error) {
+      logScanEvent("error", `Site açılamadı: ${error.message}`);
+    }
     return true;
   });
 
@@ -186,7 +227,7 @@ function registerIpc() {
   ipcMain.handle(INVOKE.installUpdate, () => updater.install());
 
   ipcMain.handle(INVOKE.openExternal, (_event, url) => {
-    if (typeof url === "string" && url.startsWith("https://www.sahibinden.com/")) {
+    if (typeof url === "string" && url.startsWith(`${SITE_ORIGIN}/`)) {
       return shell.openExternal(url);
     }
     return undefined;

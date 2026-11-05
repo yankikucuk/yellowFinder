@@ -4,12 +4,15 @@
  * the owner listings together with their phone numbers and skips the rest.
  *
  * Progress is reported through an event callback so the renderer can show a
- * live log. A scan can be cancelled between page loads.
+ * live log. A scan can be cancelled between page loads. When the site asks
+ * for a login or a verification the scan stops and reports it in the
+ * returned summary, so the caller can hold automatic scans until the user
+ * has dealt with the page.
  *
  * @module main/scanner/listing-scanner
  */
 
-import { buildSearchUrl, absoluteListingUrl, listingIdFromUrl, PAGE_SIZE } from "../../shared/search-url.js";
+import { buildSearchUrl, absoluteListingUrl, listingIdFromUrl, isSiteUrl, PAGE_SIZE } from "../../shared/search-url.js";
 import { classifySeller, collectPhones } from "./listing-classifier.js";
 
 /**
@@ -17,6 +20,14 @@ import { classifySeller, collectPhones } from "./listing-classifier.js";
  * @property {"info" | "warning" | "error" | "blocked" | "found" | "done"} level Event kind.
  * @property {string} message Human readable message (Turkish, shown to the user).
  * @property {object} [data] Optional payload such as the listing record.
+ */
+
+/**
+ * @typedef {object} ScanSummary
+ * @property {number} newListings Owner listings kept during this scan.
+ * @property {number} visited Detail pages opened.
+ * @property {boolean} stoppedByBlock True when the site asked for user interaction.
+ * @property {boolean} cancelled True when the user stopped the scan.
  */
 
 /**
@@ -40,6 +51,29 @@ function randomPause(minSeconds, maxSeconds) {
  */
 function listingIdOfRow(row) {
   return row.id || listingIdFromUrl(absoluteListingUrl(row.href));
+}
+
+/**
+ * Keeps one row per listing id, in page order, dropping rows without an id
+ * and rows whose link leaves the site. Result pages repeat showcase rows,
+ * and injected content could point elsewhere.
+ *
+ * @param {Array<{id: string, href: string}>} rows Rows as read from the page.
+ * @returns {Array<{row: object, id: string, url: string}>} Unique, on-site rows.
+ */
+function uniqueSiteRows(rows) {
+  const seen = new Set();
+  const unique = [];
+  for (const row of rows) {
+    const id = listingIdOfRow(row);
+    const url = absoluteListingUrl(row.href);
+    if (!id || seen.has(id) || !isSiteUrl(url)) {
+      continue;
+    }
+    seen.add(id);
+    unique.push({ row, id, url });
+  }
+  return unique;
 }
 
 /**
@@ -72,7 +106,7 @@ export class ListingScanner {
    * cancelled, or had to stop because the site asked for user interaction.
    *
    * @param {import("../storage/settings-store.js").Settings} settings Current settings.
-   * @returns {Promise<{newListings: number, visited: number, stoppedByBlock: boolean}>} Summary.
+   * @returns {Promise<ScanSummary>} Summary.
    */
   async run(settings) {
     if (this.running) {
@@ -80,7 +114,8 @@ export class ListingScanner {
     }
     this.running = true;
     this.cancelRequested = false;
-    const summary = { newListings: 0, visited: 0, stoppedByBlock: false };
+    /** @type {ScanSummary} */
+    const summary = { newListings: 0, visited: 0, stoppedByBlock: false, cancelled: false };
     try {
       for (const categorySlug of settings.categories) {
         for (const citySlug of settings.cities) {
@@ -97,7 +132,23 @@ export class ListingScanner {
       return summary;
     } finally {
       this.running = false;
+      this.session.release();
     }
+  }
+
+  /**
+   * Checks for a cancel request and records it.
+   *
+   * @param {ScanSummary} summary Summary to update.
+   * @returns {boolean} True when the scan must stop.
+   */
+  #cancelled(summary) {
+    if (!this.cancelRequested) {
+      return false;
+    }
+    summary.cancelled = true;
+    this.onEvent({ level: "info", message: "Tarama kullanıcı isteğiyle durduruldu." });
+    return true;
   }
 
   /**
@@ -107,21 +158,23 @@ export class ListingScanner {
    */
   async #scanSearch({ categorySlug, citySlug, settings, summary }) {
     for (let pageIndex = 0; pageIndex < settings.maxPagesPerSearch; pageIndex += 1) {
-      if (this.cancelRequested) {
-        this.onEvent({ level: "info", message: "Tarama kullanıcı isteğiyle durduruldu." });
+      if (this.#cancelled(summary)) {
         return "stop";
+      }
+      if (pageIndex > 0) {
+        await randomPause(settings.minDelaySeconds, settings.maxDelaySeconds);
       }
       const url = buildSearchUrl({ categorySlug, citySlug, pageIndex, extraQuery: settings.extraQuery });
       this.onEvent({ level: "info", message: `Liste açılıyor: ${categorySlug} / ${citySlug} / sayfa ${pageIndex + 1}` });
-      const blocked = await this.#navigateOrReport(url);
-      if (blocked === null) {
-        continue;
-      }
-      if (blocked.blocked) {
+      const page = await this.#openPage(url, () => this.session.readSearchRows());
+      if (page === "blocked") {
         summary.stoppedByBlock = true;
         return "stop";
       }
-      const { rows, rowSelectorUsed } = await this.session.readSearchRows();
+      if (page === null) {
+        continue;
+      }
+      const { rows, rowSelectorUsed } = page;
       if (rows.length === 0) {
         this.onEvent({
           level: "warning",
@@ -129,15 +182,18 @@ export class ListingScanner {
         });
         break;
       }
-      const fresh = rows.filter((row) => !this.results.shouldSkip(listingIdOfRow(row) ?? ""));
-      this.onEvent({ level: "info", message: `${rows.length} ilan listelendi, ${fresh.length} tanesi yeni.` });
-      for (const row of fresh) {
-        if (this.cancelRequested) {
-          this.onEvent({ level: "info", message: "Tarama kullanıcı isteğiyle durduruldu." });
+      const candidates = uniqueSiteRows(rows).filter((candidate) => !this.results.shouldSkip(candidate.id));
+      this.onEvent({ level: "info", message: `${rows.length} ilan listelendi, ${candidates.length} tanesi yeni.` });
+      for (const candidate of candidates) {
+        if (this.#cancelled(summary)) {
           return "stop";
         }
+        // Re-check right before the load: the same id may have been kept on an earlier page.
+        if (this.results.shouldSkip(candidate.id)) {
+          continue;
+        }
         await randomPause(settings.minDelaySeconds, settings.maxDelaySeconds);
-        const outcome = await this.#visitListing({ row, categorySlug, citySlug, summary });
+        const outcome = await this.#visitListing({ ...candidate, categorySlug, citySlug, summary });
         if (outcome === "stop") {
           summary.stoppedByBlock = true;
           return "stop";
@@ -146,7 +202,6 @@ export class ListingScanner {
       if (rows.length < PAGE_SIZE) {
         break;
       }
-      await randomPause(settings.minDelaySeconds, settings.maxDelaySeconds);
     }
     return "continue";
   }
@@ -156,22 +211,15 @@ export class ListingScanner {
    *
    * @returns {Promise<"continue" | "stop">} Whether scanning may go on.
    */
-  async #visitListing({ row, categorySlug, citySlug, summary }) {
-    const url = absoluteListingUrl(row.href);
-    const id = listingIdOfRow(row);
-    if (!id) {
-      this.onEvent({ level: "warning", message: `İlan kimliği okunamadı, atlandı: ${url}` });
-      return "continue";
-    }
-    const blocked = await this.#navigateOrReport(url);
-    if (blocked === null) {
-      return "continue";
-    }
-    if (blocked.blocked) {
+  async #visitListing({ row, id, url, categorySlug, citySlug, summary }) {
+    const detail = await this.#openPage(url, () => this.session.readDetail());
+    if (detail === "blocked") {
       return "stop";
     }
+    if (detail === null) {
+      return "continue";
+    }
     summary.visited += 1;
-    const detail = await this.session.readDetail();
     const seller = classifySeller(detail);
     if (seller === "agency") {
       this.results.markSkipped(id, "agency");
@@ -206,24 +254,34 @@ export class ListingScanner {
   }
 
   /**
-   * Navigates and translates failures into events.
+   * Navigates to a page and reads it. Load failures and script failures
+   * become warnings; a blocking page becomes a "blocked" event.
    *
+   * @template T
    * @param {string} url Page to open.
-   * @returns {Promise<{blocked: boolean, reason: string} | null>} Verdict, or null when the load failed.
+   * @param {() => Promise<T>} read Reader to run once the page is up.
+   * @returns {Promise<T | "blocked" | null>} The data, "blocked", or null when the page could not be read.
    */
-  async #navigateOrReport(url) {
+  async #openPage(url, read) {
+    let verdict;
     try {
-      const verdict = await this.session.navigate(url);
-      if (verdict.blocked) {
-        this.session.showToUser();
-        this.onEvent({
-          level: "blocked",
-          message: `Site giriş veya doğrulama istiyor (${verdict.reason}). Açılan pencerede tamamlayıp taramayı yeniden başlatın.`
-        });
-      }
-      return verdict;
+      verdict = await this.session.navigate(url);
     } catch (error) {
       this.onEvent({ level: "error", message: `Sayfa yüklenemedi: ${url} (${error.message})` });
+      return null;
+    }
+    if (verdict.blocked) {
+      this.session.showToUser();
+      this.onEvent({
+        level: "blocked",
+        message: `Site giriş veya doğrulama istiyor (${verdict.reason}). Açılan pencerede tamamlayıp "Şimdi tara" ile devam edin; otomatik tarama o zamana kadar bekler.`
+      });
+      return "blocked";
+    }
+    try {
+      return await read();
+    } catch (error) {
+      this.onEvent({ level: "warning", message: `Sayfa okunamadı: ${url} (${error.message})` });
       return null;
     }
   }

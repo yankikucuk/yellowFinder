@@ -56,7 +56,7 @@ function detectBlockingPage(markers) {
  * Runs inside a search result page and lists the rows.
  *
  * @param {typeof SEARCH_PAGE} selectors Search page selectors.
- * @returns {{rows: Array<{id: string, href: string, title: string, price: string, location: string, storeHint: boolean}>, rowSelectorUsed: string}} Rows found.
+ * @returns {{rows: Array<{id: string, href: string, title: string, price: string, location: string}>, rowSelectorUsed: string}} Rows found.
  */
 function collectSearchRows(selectors) {
   const firstMatch = (root, candidates) => {
@@ -89,8 +89,7 @@ function collectSearchRows(selectors) {
       href: link.getAttribute("href") || "",
       title: textOf(link),
       price: textOf(firstMatch(row, selectors.price)),
-      location: textOf(firstMatch(row, selectors.location)),
-      storeHint: firstMatch(row, selectors.storeHint) !== null
+      location: textOf(firstMatch(row, selectors.location))
     });
   }
   return { rows, rowSelectorUsed };

@@ -1,13 +1,32 @@
 <script setup>
 /**
  * Lists the collected owner listings with their phone numbers and offers
- * export and clear actions.
+ * export and clear actions. Rows are paged so a store with thousands of
+ * listings does not put thousands of rows into the DOM at once.
  */
-defineProps({
+import { computed, ref, watch } from "vue";
+
+const props = defineProps({
   results: { type: Array, required: true }
 });
 
 const emit = defineEmits(["export", "clear", "open"]);
+
+/** Rows per page; small enough to render instantly, large enough to scan by eye. */
+const PAGE_SIZE = 100;
+
+const pageIndex = ref(0);
+
+const pageCount = computed(() => Math.max(1, Math.ceil(props.results.length / PAGE_SIZE)));
+
+const pageRows = computed(() => props.results.slice(pageIndex.value * PAGE_SIZE, (pageIndex.value + 1) * PAGE_SIZE));
+
+// Keep the page in range when results shrink (clear) or grow.
+watch(pageCount, (count) => {
+  if (pageIndex.value >= count) {
+    pageIndex.value = count - 1;
+  }
+});
 
 function dateOf(iso) {
   return new Date(iso).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
@@ -37,7 +56,7 @@ function dateOf(iso) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="record in results" :key="record.id">
+          <tr v-for="record in pageRows" :key="record.id">
             <td>
               <a href="#" @click.prevent="emit('open', record.url)">{{ record.title }}</a>
               <div class="muted small">{{ record.categorySlug }} · {{ record.citySlug }}<span v-if="record.sellerKind === 'unknown'"> · satıcı türü belirsiz</span></div>
@@ -54,6 +73,11 @@ function dateOf(iso) {
           </tr>
         </tbody>
       </table>
+    </div>
+    <div v-if="pageCount > 1" class="pager">
+      <button class="secondary" :disabled="pageIndex === 0" @click="pageIndex -= 1">Önceki</button>
+      <span class="muted">Sayfa {{ pageIndex + 1 }} / {{ pageCount }}</span>
+      <button class="secondary" :disabled="pageIndex >= pageCount - 1" @click="pageIndex += 1">Sonraki</button>
     </div>
   </section>
 </template>
@@ -81,6 +105,14 @@ function dateOf(iso) {
 .table-wrap {
   overflow: auto;
   flex: 1;
+}
+
+.pager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
 }
 
 .small {

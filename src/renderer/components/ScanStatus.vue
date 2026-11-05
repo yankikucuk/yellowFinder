@@ -29,7 +29,7 @@ function timeOf(iso) {
       <span class="muted">{{ nextRunLabel }}</span>
     </div>
     <ul class="log">
-      <li v-for="(event, index) in events" :key="index" :class="event.level">
+      <li v-for="event in events" :key="event.id" :class="event.level">
         <span class="muted time">{{ timeOf(event.at) }}</span>
         {{ event.message }}
       </li>

@@ -15,9 +15,7 @@ export const SEARCH_PAGE = Object.freeze({
   /** Link to the detail page inside a row. */
   titleLink: ["td.searchResultsTitleValue a.classifiedTitle", "a.classifiedTitle", "a[href*='/ilan/']"],
   price: ["td.searchResultsPriceValue", ".classified-price-container"],
-  location: ["td.searchResultsLocationValue"],
-  /** Present on agency rows in some layouts; absent on owner rows. Used only as a hint. */
-  storeHint: ["td.searchResultsStoreValue", "a.store-link", "img.store-logo"]
+  location: ["td.searchResultsLocationValue"]
 });
 
 export const DETAIL_PAGE = Object.freeze({
