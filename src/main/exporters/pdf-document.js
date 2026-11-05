@@ -36,7 +36,7 @@ export function renderPdfHtml(records, generatedAt = new Date()) {
     )
     .join("\n");
   return `<!DOCTYPE html>
-<html lang="tr"><head><meta charset="utf-8"><title>yellowFinder</title>
+<html lang="tr"><head><meta charset="utf-8"><title>YellowFinder</title>
 <style>
   body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 11pt; color: #1d1d1f; margin: 24px; }
   h1 { font-size: 16pt; margin: 0 0 4px; }
@@ -47,7 +47,7 @@ export function renderPdfHtml(records, generatedAt = new Date()) {
   td.phones { white-space: nowrap; font-variant-numeric: tabular-nums; }
   small { color: #6e6e73; }
 </style></head><body>
-<h1>yellowFinder listesi</h1>
+<h1>YellowFinder listesi</h1>
 <p class="meta">${escapeHtml(generatedAt.toLocaleString("tr-TR"))} · ${records.length} ilan</p>
 <table><thead><tr><th>İlan</th><th>Telefon</th></tr></thead><tbody>
 ${rows}

@@ -18,7 +18,7 @@ const emit = defineEmits(["open-site", "start", "stop", "open-settings"]);
       <span class="btn-primary flex h-10 w-10 items-center justify-center rounded-xl">
         <i class="fa-solid fa-magnifying-glass-location text-base" aria-hidden="true"></i>
       </span>
-      <h1 class="text-[17px] leading-none font-bold tracking-tight">yellowFinder</h1>
+      <h1 class="text-[17px] leading-none font-bold tracking-tight">YellowFinder</h1>
       <span class="pill-glass font-mono leading-none">v{{ version }}</span>
     </div>
 

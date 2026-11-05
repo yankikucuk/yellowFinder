@@ -123,7 +123,7 @@ function createControlWindow() {
     minWidth: 1180,
     minHeight: 780,
     fullscreenable: true,
-    title: "yellowFinder",
+    title: "YellowFinder",
     backgroundColor: "#fffbe6",
     webPreferences: {
       preload: PRELOAD_SCRIPT,

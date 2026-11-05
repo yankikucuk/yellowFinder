@@ -1,6 +1,6 @@
 {
   "name": "yellowfinder",
-  "productName": "yellowFinder",
+  "productName": "YellowFinder",
   "version": "0.1.0",
   "description": "Desktop tool that scans sahibinden.com every hour for owner-posted listings in chosen categories and cities, collects the listed phone numbers and exports them as TXT, CSV or PDF.",
   "private": true,

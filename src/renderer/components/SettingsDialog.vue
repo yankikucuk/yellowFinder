@@ -96,7 +96,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
         </button>
       </div>
 
-      <p class="mt-5 text-center font-mono text-[11px] text-ink-faint">yellowFinder v{{ version }}</p>
+      <p class="mt-5 text-center font-mono text-[11px] text-ink-faint">YellowFinder v{{ version }}</p>
     </section>
   </div>
 </template>

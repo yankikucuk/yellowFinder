@@ -2,7 +2,7 @@
 # See docs/adr/0003-updates-and-releases.md for the release flow.
 
 appId: com.yankikucuk.yellowfinder
-productName: yellowFinder
+productName: YellowFinder
 artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 
 directories:

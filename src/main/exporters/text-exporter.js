@@ -9,7 +9,7 @@
  * @returns {string} File content.
  */
 export function renderText(records) {
-  const lines = [`yellowFinder listesi · ${new Date().toLocaleString("tr-TR")}`, `${records.length} ilan`, ""];
+  const lines = [`YellowFinder listesi · ${new Date().toLocaleString("tr-TR")}`, `${records.length} ilan`, ""];
   for (const record of records) {
     lines.push(record.title);
     lines.push(`${record.price} · ${record.location}`);

@@ -52,7 +52,7 @@ export class SiteSession {
       width: 1200,
       height: 860,
       show,
-      title: "yellowFinder · sahibinden.com",
+      title: "YellowFinder · sahibinden.com",
       webPreferences: {
         partition: SITE_PARTITION,
         contextIsolation: true,

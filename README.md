@@ -1,4 +1,4 @@
-# yellowFinder
+# YellowFinder
 
 Desktop app that watches sahibinden.com for listings posted by owners
 (no real estate agency) in the categories and cities you choose, collects
@@ -78,7 +78,7 @@ YELLOWFINDER_SMOKE_CLICK='button[title="Ayarlar"]' YELLOWFINDER_SMOKE_SCREENSHOT
 ```
 
 Settings (`settings.json`) and the listing database (`results.sqlite`) live
-in Electron's userData folder (`~/Library/Application Support/yellowfinder`
+in Electron's userData folder (`~/Library/Application Support/YellowFinder`
 on macOS). A listing that was opened is not opened again: owner and agency
 verdicts are final, listings without a visible phone number are retried
 after three days, and visit history older than 180 days is dropped. See
