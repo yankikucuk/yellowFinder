@@ -103,9 +103,9 @@ Output goes to `release/`.
 Notes:
 
 - electron-updater reads releases without a token only when the repository
-  is public. While the repository is private, either make it public for the
-  test or publish releases to a separate public repository
-  (change `publish.repo` in `electron-builder.yml`).
+  is public, which it is. If the source ever goes private again, publish
+  releases to a separate public repository (change `publish.repo` in
+  `electron-builder.yml`).
 - macOS only installs updates for code signed apps. Until an Apple
   Developer ID certificate is configured in the workflow, the macOS build
   runs but will not self update; Windows and Linux builds update without

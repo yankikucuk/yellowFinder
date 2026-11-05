@@ -10,6 +10,7 @@
 
 import { app } from "electron";
 import electronUpdater from "electron-updater";
+import { describeUpdateError } from "./update-messages.js";
 
 const { autoUpdater } = electronUpdater;
 
@@ -19,25 +20,6 @@ const { autoUpdater } = electronUpdater;
  * @property {string} message Human readable message (Turkish).
  * @property {string} [version] Version involved, when known.
  */
-
-/**
- * Turns an updater error into a message the user can act on. Unsigned macOS
- * builds cannot install updates (Squirrel.Mac refuses them), so that case
- * points at the release page instead of showing a code signature error.
- *
- * @param {Error} error Updater error.
- * @returns {string} Message in Turkish.
- */
-function describeUpdateError(error) {
-  const text = error?.message ?? String(error);
-  if (process.platform === "darwin" && /code signature|signed|codesign/i.test(text)) {
-    return "Bu macOS sürümü imzasız olduğu için kendini güncelleyemiyor. Yeni sürümü GitHub Releases sayfasından indirin.";
-  }
-  if (/404|Not Found|Unable to find latest version/i.test(text)) {
-    return "Güncelleme bilgisi bulunamadı. Depo özel olabilir ya da henüz bir sürüm yayınlanmamış olabilir.";
-  }
-  return `Güncelleme hatası: ${text}`;
-}
 
 /**
  * Sets up the updater and forwards its events.
@@ -77,7 +59,7 @@ export function createUpdater(onStatus) {
       try {
         await autoUpdater.checkForUpdates();
       } catch (error) {
-        onStatus({ state: "error", message: `Güncelleme hatası: ${error.message}` });
+        onStatus({ state: "error", message: describeUpdateError(error) });
       }
     },
     install() {
