@@ -71,6 +71,7 @@ Requires Node 22.13 or newer (the built in `node:sqlite` module). CI and the Ele
 npm install
 npm run dev        # builds the renderer and starts Electron
 npm test           # unit tests
+npm run test:dom   # page scripts against the fixture pages in test/fixtures, inside Electron
 npm run lint       # eslint
 npx electron . --smoke-test   # boots the app, prints renderer console output, exits 0 when clean
 npm run icon                  # re-renders build/icon*.png after editing build/icon.svg

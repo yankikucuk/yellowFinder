@@ -28,6 +28,7 @@
     "dist:linux": "npm run build:renderer && electron-builder --linux --publish never",
     "release": "npm run build:renderer && electron-builder --publish always",
     "test": "node --test \"test/**/*.test.js\"",
+    "test:dom": "electron test/electron/page-scripts.electron.mjs",
     "lint": "eslint .",
     "icon": "electron scripts/render-icon.mjs"
   },

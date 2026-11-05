@@ -68,7 +68,8 @@ function collectSearchRows(selectors) {
     }
     return null;
   };
-  const textOf = (element) => (element ? element.textContent.replace(/\s+/g, " ").trim() : "");
+  // innerText keeps line breaks such as <br> between district and neighbourhood; textContent would glue them together.
+  const textOf = (element) => (element ? (element.innerText || element.textContent).replace(/\s+/g, " ").trim() : "");
   let rowElements = [];
   let rowSelectorUsed = "";
   for (const candidate of selectors.rows) {
@@ -103,7 +104,8 @@ function collectSearchRows(selectors) {
  * @returns {{title: string, sellerAttribute: string, hasStoreMarker: boolean, phoneCandidates: string[], contactText: string}} Extracted data.
  */
 function collectDetailData(selectors) {
-  const textOf = (element) => (element ? element.textContent.replace(/\s+/g, " ").trim() : "");
+  // innerText keeps rendered line breaks between words; textContent would glue them together.
+  const textOf = (element) => (element ? (element.innerText || element.textContent).replace(/\s+/g, " ").trim() : "");
   const allMatches = (candidates) => {
     for (const candidate of candidates) {
       const elements = [...document.querySelectorAll(candidate)];
