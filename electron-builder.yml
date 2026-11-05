@@ -25,6 +25,7 @@ publish:
 
 mac:
   category: public.app-category.utilities
+  icon: build/icon-mac.png
   target:
     - target: dmg
       arch: [x64, arm64]
@@ -32,6 +33,7 @@ mac:
       arch: [x64, arm64]
 
 win:
+  icon: build/icon.png
   target:
     - target: nsis
       arch: [x64]
@@ -41,6 +43,7 @@ nsis:
   allowToChangeInstallationDirectory: true
 
 linux:
+  icon: build/icon.png
   category: Utility
   maintainer: kendinikertenkelebek@me.com
   target:

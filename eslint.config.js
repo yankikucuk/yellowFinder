@@ -11,7 +11,7 @@ export default [
   js.configs.recommended,
   ...pluginVue.configs["flat/recommended"],
   {
-    files: ["src/main/**/*.js", "test/**/*.js", "vite.config.js", "eslint.config.js"],
+    files: ["src/main/**/*.js", "scripts/**/*.mjs", "test/**/*.js", "vite.config.js", "eslint.config.js"],
     languageOptions: { globals: { ...globals.node } }
   },
   {

@@ -28,7 +28,8 @@
     "dist:linux": "npm run build:renderer && electron-builder --linux --publish never",
     "release": "npm run build:renderer && electron-builder --publish always",
     "test": "node --test \"test/**/*.test.js\"",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "icon": "electron scripts/render-icon.mjs"
   },
   "dependencies": {
     "electron-updater": "^6.8.11"

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    yellowFinder app icon. Source of truth for every platform icon:
+    scripts/render-icon.mjs renders it to build/icon.png (full bleed, Windows
+    and Linux) and build/icon-mac.png (inset on a transparent canvas, macOS).
+    A yellow tile with a magnifier whose lens frames a house: find homes.
+  -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD43B"/>
+      <stop offset="1" stop-color="#F2B705"/>
+    </linearGradient>
+    <clipPath id="lens">
+      <circle cx="446" cy="446" r="206"/>
+    </clipPath>
+  </defs>
+
+  <!-- Tile -->
+  <rect x="0" y="0" width="1024" height="1024" rx="224" fill="url(#tile)"/>
+
+  <!-- Lens glass -->
+  <circle cx="446" cy="446" r="206" fill="#FFF8DB"/>
+
+  <!-- House inside the lens -->
+  <g clip-path="url(#lens)" fill="#1D1D1F">
+    <polygon points="446,318 318,436 574,436"/>
+    <rect x="352" y="428" width="188" height="138"/>
+    <rect x="500" y="340" width="34" height="70"/>
+  </g>
+  <!-- Door, cut out of the house -->
+  <rect x="420" y="480" width="52" height="86" rx="6" fill="#FFF8DB"/>
+
+  <!-- Magnifier ring and handle -->
+  <circle cx="446" cy="446" r="206" fill="none" stroke="#1D1D1F" stroke-width="56"/>
+  <line x1="602" y1="602" x2="802" y2="802" stroke="#1D1D1F" stroke-width="88" stroke-linecap="round"/>
+</svg>

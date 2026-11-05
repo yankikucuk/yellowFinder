@@ -52,7 +52,10 @@ src/
 test/                   Unit tests (node:test)
 docs/adr/               Architecture decision records
 .github/workflows/      CI (lint, test, build) and Release (tag -> installers)
-build/icon.png          Source icon; electron-builder derives icns/ico from it
+build/icon.svg          Source icon; `npm run icon` renders it to build/icon.png (Windows,
+                        Linux) and build/icon-mac.png (macOS inset); electron-builder
+                        derives ico and icns from those
+scripts/render-icon.mjs Icon renderer, runs inside Electron so no image library is needed
 ```
 
 ## Develop
@@ -65,6 +68,7 @@ npm run dev        # builds the renderer and starts Electron
 npm test           # unit tests
 npm run lint       # eslint
 npx electron . --smoke-test   # boots the app, prints renderer console output, exits 0 when clean
+npm run icon                  # re-renders build/icon*.png after editing build/icon.svg
 ```
 
 Settings (`settings.json`) and the listing database (`results.sqlite`) live
