@@ -65,14 +65,16 @@ function save() {
     <h2 class="card-title">
       <i class="fa-solid fa-layer-group text-brand-600" aria-hidden="true"></i>
       Kategoriler
-      <span class="ml-auto text-xs font-normal text-ink-muted">{{ draft.categories.length }} seçili</span>
+      <span class="pill-glass ml-auto font-mono">{{ draft.categories.length }}</span>
     </h2>
-    <div v-for="[group, items] in categoryGroups" :key="group" class="mb-2">
-      <div class="mb-1 px-2 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">{{ group }}</div>
-      <label v-for="category in items" :key="category.slug" class="check">
-        <input type="checkbox" :checked="draft.categories.includes(category.slug)" @change="toggleCategory(category.slug)" />
-        {{ category.label }}
-      </label>
+    <div class="glass-inset p-1">
+      <div v-for="[group, items] in categoryGroups" :key="group" class="mb-1 last:mb-0">
+        <div class="label px-2.5 pt-2">{{ group }}</div>
+        <label v-for="category in items" :key="category.slug" class="check">
+          <input type="checkbox" :checked="draft.categories.includes(category.slug)" @change="toggleCategory(category.slug)" />
+          {{ category.label }}
+        </label>
+      </div>
     </div>
   </section>
 
@@ -80,7 +82,7 @@ function save() {
     <h2 class="card-title">
       <i class="fa-solid fa-city text-brand-600" aria-hidden="true"></i>
       Şehirler
-      <span class="ml-auto text-xs font-normal text-ink-muted">{{ draft.cities.length }} seçili</span>
+      <span class="pill-glass ml-auto font-mono">{{ draft.cities.length }}</span>
     </h2>
     <CityPicker v-model="draft.cities" :cities="cities" />
   </section>
@@ -91,40 +93,40 @@ function save() {
       Zamanlama
     </h2>
 
-    <label class="check mb-3 -mx-2">
+    <label class="check glass-inset mb-3">
       <input v-model="draft.autoScan" type="checkbox" />
       Otomatik tarama açık
     </label>
 
     <div class="grid grid-cols-2 gap-3">
       <div>
-        <span class="label">Aralık (dakika)</span>
-        <input v-model.number="draft.intervalMinutes" class="field" type="number" min="15" max="1440" />
+        <span class="label">Aralık (dk)</span>
+        <input v-model.number="draft.intervalMinutes" class="field font-mono" type="number" min="15" max="1440" />
       </div>
       <div>
         <span class="label">Sayfa / arama</span>
-        <input v-model.number="draft.maxPagesPerSearch" class="field" type="number" min="1" max="20" />
+        <input v-model.number="draft.maxPagesPerSearch" class="field font-mono" type="number" min="1" max="20" />
       </div>
       <div>
         <span class="label">En az bekleme (sn)</span>
-        <input v-model.number="draft.minDelaySeconds" class="field" type="number" min="2" max="120" />
+        <input v-model.number="draft.minDelaySeconds" class="field font-mono" type="number" min="2" max="120" />
       </div>
       <div>
         <span class="label">En çok bekleme (sn)</span>
-        <input v-model.number="draft.maxDelaySeconds" class="field" type="number" min="2" max="300" />
+        <input v-model.number="draft.maxDelaySeconds" class="field font-mono" type="number" min="2" max="300" />
       </div>
     </div>
 
     <div class="mt-3">
       <span class="label">Ek sorgu parametreleri</span>
       <input v-model="draft.extraQuery" class="field font-mono text-xs" type="text" placeholder="a=b&c=d" />
-      <p class="mt-1 text-xs text-ink-muted">
+      <p class="mt-1.5 text-[11.5px] leading-snug text-ink-muted">
         Sitede filtre seçip adres çubuğundaki soru işaretinden sonrasını yapıştırın. "Kimden: Sahibinden" filtresi burada verilirse emlakçı ilanları hiç açılmaz.
       </p>
     </div>
 
-    <button class="btn mt-4 w-full justify-center" :class="dirty ? 'btn-primary' : 'btn-secondary'" type="button" :disabled="!dirty" @click="save">
-      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+    <button class="btn mt-4 w-full justify-center" :class="dirty ? 'btn-primary' : 'btn-glass'" type="button" :disabled="!dirty" @click="save">
+      <i class="fa-solid" :class="dirty ? 'fa-floppy-disk' : 'fa-check'" aria-hidden="true"></i>
       {{ dirty ? "Ayarları kaydet" : "Ayarlar kayıtlı" }}
     </button>
   </section>

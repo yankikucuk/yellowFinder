@@ -59,30 +59,30 @@ function clearAll() {
       <button
         v-for="city in selectedCities"
         :key="city.slug"
-        class="pill bg-brand-100 text-ink hover:bg-brand-200"
+        class="pill bg-brand-400/80 text-ink transition-colors hover:bg-brand-400"
         type="button"
         :title="`${city.label} seçimini kaldır`"
         @click="toggle(city.slug)"
       >
         {{ city.label }}
-        <i class="fa-solid fa-xmark text-[10px] text-ink-muted" aria-hidden="true"></i>
+        <i class="fa-solid fa-xmark text-[10px] opacity-60" aria-hidden="true"></i>
       </button>
-      <button v-if="selectedCities.length > 1" class="pill text-ink-muted hover:bg-brand-50" type="button" @click="clearAll">
+      <button v-if="selectedCities.length > 1" class="pill-glass hover:bg-white/80" type="button" @click="clearAll">
         Tümünü kaldır
       </button>
     </div>
 
     <div class="relative mb-2">
-      <i class="fa-solid fa-magnifying-glass pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-ink-muted" aria-hidden="true"></i>
+      <i class="fa-solid fa-magnifying-glass pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-ink-faint" aria-hidden="true"></i>
       <input v-model="query" class="field pl-8" type="search" placeholder="Şehir ara" />
     </div>
 
-    <div class="scroll-thin max-h-44 overflow-y-auto rounded-xl border border-line">
-      <label v-for="city in filtered" :key="city.slug" class="check rounded-none">
+    <div class="glass-inset scroll-thin max-h-44 overflow-y-auto p-1">
+      <label v-for="city in filtered" :key="city.slug" class="check">
         <input type="checkbox" :checked="selected.includes(city.slug)" @change="toggle(city.slug)" />
         {{ city.label }}
       </label>
-      <p v-if="filtered.length === 0" class="px-3 py-4 text-center text-xs text-ink-muted">Eşleşen şehir yok.</p>
+      <p v-if="filtered.length === 0" class="px-3 py-4 text-center text-[12px] text-ink-muted">Eşleşen şehir yok.</p>
     </div>
   </div>
 </template>

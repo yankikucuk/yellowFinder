@@ -1,7 +1,8 @@
 <script setup>
 /**
- * Top bar: app mark, name and version on the left, the two primary actions
- * on the right. The scan button swaps to a stop button while a scan runs.
+ * Floating glass top bar: app mark, name and version on the left, the two
+ * primary actions on the right. The scan button swaps to a stop button
+ * while a scan runs.
  */
 defineProps({
   version: { type: String, required: true },
@@ -12,20 +13,20 @@ const emit = defineEmits(["open-site", "start", "stop"]);
 </script>
 
 <template>
-  <header class="flex items-center justify-between border-b border-line bg-brand-100 px-5 py-3">
+  <header class="glass-raised mx-4 mt-4 flex items-center justify-between px-5 py-3">
     <div class="flex items-center gap-3">
-      <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-400 text-ink">
+      <span class="btn-primary flex h-11 w-11 items-center justify-center rounded-2xl text-ink">
         <i class="fa-solid fa-magnifying-glass-location text-lg" aria-hidden="true"></i>
       </span>
       <div>
-        <h1 class="text-base leading-tight font-semibold">yellowFinder</h1>
-        <p class="text-xs text-ink-muted">sahibinden.com · emlakçısı olmayan ilanlar</p>
+        <h1 class="text-[15px] leading-tight font-bold tracking-tight">yellowFinder</h1>
+        <p class="text-[11px] font-medium text-ink-muted">sahibinden.com · emlakçısı olmayan ilanlar</p>
       </div>
-      <span class="pill bg-white/70 text-ink-muted">v{{ version }}</span>
+      <span class="pill-glass font-mono">v{{ version }}</span>
     </div>
 
     <div class="flex items-center gap-2">
-      <button class="btn btn-secondary" type="button" @click="emit('open-site')">
+      <button class="btn btn-glass" type="button" @click="emit('open-site')">
         <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
         Siteyi aç / giriş yap
       </button>

@@ -48,7 +48,8 @@ src/
       user-agent.js     Plain Chrome user agent for the site window (ADR 0002 amendment)
     exporters/          TXT, CSV and PDF writers (pdf-document.js is the printable HTML)
   preload/index.cjs     Context bridge exposed to the renderer as window.yellowFinder
-  renderer/             Vue 3 interface (Tailwind CSS 4, Font Awesome Free) built by Vite into dist/renderer
+  renderer/             Vue 3 interface (Tailwind CSS 4, Font Awesome Free, Montserrat and
+                        Roboto Mono bundled locally, Liquid Glass inspired) built by Vite
   shared/               Code used by both sides: catalogs, URL builder, phone parsing
 test/                   Unit tests (node:test)
 docs/adr/               Architecture decision records

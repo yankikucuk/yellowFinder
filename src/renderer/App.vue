@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
     />
 
     <main class="grid min-h-0 flex-1 grid-cols-[360px_1fr] gap-4 p-4">
-      <aside class="scroll-thin flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
+      <aside class="scroll-thin flex min-h-0 flex-col gap-4 overflow-y-auto pr-1 pb-1">
         <SettingsPanel
           v-if="settings"
           :settings="settings"

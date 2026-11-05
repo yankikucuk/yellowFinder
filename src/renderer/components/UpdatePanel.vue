@@ -12,13 +12,13 @@ const props = defineProps({
 const emit = defineEmits(["check", "install"]);
 
 const ICONS = {
-  idle: "fa-circle-info text-ink-muted",
+  idle: "fa-circle-info text-ink-faint",
   checking: "fa-rotate fa-spin text-brand-600",
   available: "fa-cloud-arrow-down text-brand-600",
   downloading: "fa-cloud-arrow-down fa-beat text-brand-600",
-  downloaded: "fa-circle-check text-green-700",
-  "not-available": "fa-circle-check text-green-700",
-  error: "fa-triangle-exclamation text-red-700"
+  downloaded: "fa-circle-check text-emerald-600",
+  "not-available": "fa-circle-check text-emerald-600",
+  error: "fa-triangle-exclamation text-amber-600"
 };
 
 const icon = computed(() => ICONS[props.status.state] ?? ICONS.idle);
@@ -30,12 +30,12 @@ const icon = computed(() => ICONS[props.status.state] ?? ICONS.idle);
       <i class="fa-solid fa-arrows-rotate text-brand-600" aria-hidden="true"></i>
       Güncelleme
     </h2>
-    <p class="mb-3 flex items-start gap-2 text-sm text-ink-muted">
+    <p class="glass-inset mb-3 flex items-start gap-2.5 px-3 py-2.5 text-[13px] text-ink-muted">
       <i class="fa-solid mt-0.5" :class="icon" aria-hidden="true"></i>
       <span>{{ status.message || "Henüz denetlenmedi." }}</span>
     </p>
     <div class="flex gap-2">
-      <button class="btn btn-secondary" type="button" :disabled="status.state === 'checking'" @click="emit('check')">
+      <button class="btn btn-glass" type="button" :disabled="status.state === 'checking'" @click="emit('check')">
         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
         Denetle
       </button>
