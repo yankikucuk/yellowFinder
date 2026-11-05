@@ -1,6 +1,6 @@
 /**
- * Entry point for exports: picks the format, asks for a destination and
- * writes the file.
+ * Entry point for exports: narrows the list, picks the format, asks for a
+ * destination and writes the file.
  *
  * @module main/exporters
  */
@@ -10,13 +10,18 @@ import { dialog } from "electron";
 import { renderText } from "./text-exporter.js";
 import { renderCsv } from "./csv-exporter.js";
 import { renderPdf } from "./pdf-exporter.js";
+import { renderXlsx } from "./xlsx-exporter.js";
+import { selectForExport } from "./export-selection.js";
 
-/** @typedef {"txt" | "csv" | "pdf"} ExportFormat */
+/** @typedef {"txt" | "csv" | "pdf" | "xlsx"} ExportFormat */
+
+export const EXPORT_FORMATS = Object.freeze(["txt", "csv", "pdf", "xlsx"]);
 
 const FORMAT_FILTERS = Object.freeze({
   txt: { name: "Metin", extensions: ["txt"] },
   csv: { name: "CSV", extensions: ["csv"] },
-  pdf: { name: "PDF", extensions: ["pdf"] }
+  pdf: { name: "PDF", extensions: ["pdf"] },
+  xlsx: { name: "Excel", extensions: ["xlsx"] }
 });
 
 /**
@@ -34,25 +39,29 @@ export async function renderExport(format, records) {
       return renderCsv(records);
     case "pdf":
       return renderPdf(records);
+    case "xlsx":
+      return renderXlsx(records);
     default:
       throw new Error(`Unsupported export format: ${format}`);
   }
 }
 
 /**
- * Shows a save dialog and writes the export. Resolves to the chosen path, or
- * null when the user cancelled.
+ * Shows a save dialog and writes the export. Resolves to the chosen path
+ * and the number of listings written, or null when the user cancelled.
  *
  * @param {import("electron").BrowserWindow} parent Window that owns the dialog.
  * @param {ExportFormat} format Target format.
- * @param {import("../storage/results-store.js").ListingRecord[]} records Listings to export.
- * @returns {Promise<string | null>} Saved file path.
+ * @param {import("../storage/results-store.js").ListingRecord[]} records All listings.
+ * @param {import("./export-selection.js").ExportSelection} [selection] Which listings to include.
+ * @returns {Promise<{path: string, count: number} | null>} Result.
  */
-export async function exportToFile(parent, format, records) {
+export async function exportToFile(parent, format, records, selection = {}) {
   const filter = FORMAT_FILTERS[format];
   if (!filter) {
     throw new Error(`Unsupported export format: ${format}`);
   }
+  const chosen = selectForExport(records, selection);
   const stamp = new Date().toISOString().slice(0, 10);
   const { canceled, filePath } = await dialog.showSaveDialog(parent, {
     defaultPath: `yellowfinder-${stamp}.${format}`,
@@ -61,7 +70,7 @@ export async function exportToFile(parent, format, records) {
   if (canceled || !filePath) {
     return null;
   }
-  const content = await renderExport(format, records);
+  const content = await renderExport(format, chosen);
   await writeFile(filePath, content);
-  return filePath;
+  return { path: filePath, count: chosen.length };
 }

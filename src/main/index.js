@@ -18,7 +18,7 @@ import { ResultsStore } from "./storage/results-store.js";
 import { SiteSession } from "./scanner/site-session.js";
 import { ListingScanner } from "./scanner/listing-scanner.js";
 import { ScanScheduler } from "./scheduler.js";
-import { exportToFile } from "./exporters/index.js";
+import { exportToFile, EXPORT_FORMATS } from "./exporters/index.js";
 import { createUpdater } from "./updater.js";
 import { INVOKE, EVENTS } from "./ipc-channels.js";
 import { CITIES } from "../shared/catalog/cities.js";
@@ -243,11 +243,12 @@ function registerIpc() {
     return true;
   });
 
-  ipcMain.handle(INVOKE.exportResults, async (_event, format) => {
-    if (!["txt", "csv", "pdf"].includes(format)) {
+  ipcMain.handle(INVOKE.exportResults, async (_event, format, selection) => {
+    if (!EXPORT_FORMATS.includes(format)) {
       throw new Error("Unsupported format");
     }
-    return exportToFile(controlWindow, format, resultsStore.all());
+    const safeSelection = selection && typeof selection === "object" ? selection : {};
+    return exportToFile(controlWindow, format, resultsStore.all(), safeSelection);
   });
 
   ipcMain.handle(INVOKE.checkForUpdates, () => updater.check());

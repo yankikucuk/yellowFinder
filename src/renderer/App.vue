@@ -8,6 +8,7 @@ import { computed, onMounted, onBeforeUnmount, reactive, ref, watch } from "vue"
 import AppHeader from "./components/AppHeader.vue";
 import SettingsPanel from "./components/SettingsPanel.vue";
 import SettingsDialog from "./components/SettingsDialog.vue";
+import ExportDialog from "./components/ExportDialog.vue";
 import ScanStatus from "./components/ScanStatus.vue";
 import ResultsTable from "./components/ResultsTable.vue";
 
@@ -22,6 +23,11 @@ const scanState = reactive({ running: false, nextRunAt: null });
 const events = ref([]);
 const updateStatus = ref({ state: "idle", message: "" });
 const settingsOpen = ref(false);
+const exportOpen = ref(false);
+/** Listing ids ticked in the table. */
+const selectedIds = ref([]);
+/** Listing ids matching the table's search box. */
+const filteredIds = ref([]);
 
 /** Log lines kept in memory; older ones are dropped. */
 const MAX_EVENTS = 300;
@@ -131,15 +137,23 @@ function addFoundListing(record) {
 async function clearResults() {
   if (window.confirm("Tüm liste silinecek. Emin misiniz?")) {
     results.value = await bridge.clearResults();
+    selectedIds.value = [];
     note("info", "Liste temizlendi.");
   }
 }
 
-async function exportResults(format) {
+/**
+ * Runs an export chosen in the export dialog.
+ *
+ * @param {"txt" | "csv" | "pdf" | "xlsx"} format File format.
+ * @param {{ids?: string[], from?: string, to?: string}} selection Which listings to include.
+ */
+async function exportResults(format, selection) {
+  exportOpen.value = false;
   try {
-    const path = await bridge.exportResults(format);
-    if (path) {
-      note("info", `Dışa aktarıldı: ${path}`);
+    const result = await bridge.exportResults(format, selection);
+    if (result) {
+      note("info", `${result.count} ilan dışa aktarıldı: ${result.path}`);
     }
   } catch (error) {
     note("error", `Dışa aktarma başarısız: ${error.message}`);
@@ -220,14 +234,26 @@ onBeforeUnmount(() => {
           @clear="clearLog"
         />
         <ResultsTable
+          v-model:selected-ids="selectedIds"
+          v-model:filtered-ids="filteredIds"
           :results="results"
-          @export="exportResults"
+          @export="exportOpen = true"
           @clear="clearResults"
           @open="bridge.openExternal"
           @copy="copyPhone"
         />
       </section>
     </main>
+
+    <ExportDialog
+      v-if="exportOpen"
+      :total-count="results.length"
+      :filtered-count="filteredIds.length"
+      :selected-ids="selectedIds"
+      :filtered-ids="filteredIds"
+      @close="exportOpen = false"
+      @export="exportResults"
+    />
 
     <SettingsDialog
       v-if="settingsOpen"

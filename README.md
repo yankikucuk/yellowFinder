@@ -8,17 +8,19 @@ GitHub releases.
 
 ## How it works
 
-1. You pick categories (for example "Satılık Daire") and cities in the
-   sidebar and save. The gear in the header opens the app settings:
-   colour scheme (system, light, dark) and software updates.
+1. You create search profiles in the sidebar: each one is a named set of
+   categories (for example "Satılık Daire") and cities, and can be switched
+   off without losing its selection. The gear in the header opens the app
+   settings: colour scheme (system, light, dark) and software updates.
 2. The app opens sahibinden.com in its own browser window. You log in
    there once; the session is kept between launches.
 3. Every hour (configurable) the app loads the newest result pages for each
    category and city, opens each listing it has not seen before, reads the
    "Kimden" attribute and keeps the listing only when the site says
    "Sahibinden". Phone numbers are read from the rendered contact box.
-4. Found listings appear in the table. Export them with the TXT, CSV or
-   PDF buttons.
+4. Found listings appear in the table. "Dışa aktar" writes them as Excel
+   (XLSX), CSV, PDF or plain text, for all rows, the current search result
+   or the ticked rows, optionally limited to a range of days.
 
 The app drives a normal, visible Chromium window with your own session.
 When the site shows a login page or a verification step, the scan stops,

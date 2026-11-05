@@ -1,16 +1,20 @@
 <script setup>
 /**
  * Lists the collected owner listings with their phone numbers and offers
- * search, export, copy and clear actions. Rows are filtered by a text box
- * and paged so a store with thousands of listings stays responsive.
+ * search, row selection, export, copy and clear actions. Rows are filtered
+ * by a text box and paged so a store with thousands of listings stays
+ * responsive. The selection is a list of listing ids owned by the parent so
+ * the export dialog can use it; the ids of the current search result are
+ * reported the same way.
  */
 import { computed, ref, watch } from "vue";
 
 const props = defineProps({
-  results: { type: Array, required: true }
+  results: { type: Array, required: true },
+  selectedIds: { type: Array, required: true }
 });
 
-const emit = defineEmits(["export", "clear", "open", "copy"]);
+const emit = defineEmits(["export", "clear", "open", "copy", "update:selectedIds", "update:filteredIds"]);
 
 /** Rows per page; small enough to render instantly, large enough to scan by eye. */
 const PAGE_SIZE = 100;
@@ -28,6 +32,12 @@ const filtered = computed(() => {
   );
 });
 
+watch(
+  filtered,
+  (rows) => emit("update:filteredIds", rows.map((record) => record.id)),
+  { immediate: true }
+);
+
 const pageCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)));
 
 const pageRows = computed(() => filtered.value.slice(pageIndex.value * PAGE_SIZE, (pageIndex.value + 1) * PAGE_SIZE));
@@ -43,6 +53,36 @@ watch(query, () => {
   pageIndex.value = 0;
 });
 
+const selectedSet = computed(() => new Set(props.selectedIds));
+
+const allOnPageSelected = computed(() => pageRows.value.length > 0 && pageRows.value.every((record) => selectedSet.value.has(record.id)));
+
+function toggleRow(id) {
+  const next = new Set(props.selectedIds);
+  if (next.has(id)) {
+    next.delete(id);
+  } else {
+    next.add(id);
+  }
+  emit("update:selectedIds", [...next]);
+}
+
+function togglePage() {
+  const next = new Set(props.selectedIds);
+  for (const record of pageRows.value) {
+    if (allOnPageSelected.value) {
+      next.delete(record.id);
+    } else {
+      next.add(record.id);
+    }
+  }
+  emit("update:selectedIds", [...next]);
+}
+
+function clearSelection() {
+  emit("update:selectedIds", []);
+}
+
 function dateOf(iso) {
   return new Date(iso).toLocaleString("tr-TR", { dateStyle: "short", timeStyle: "short" });
 }
@@ -57,20 +97,21 @@ function dateOf(iso) {
         <span class="pill-glass font-mono">{{ results.length }}</span>
       </h2>
 
-      <div class="relative w-40">
+      <div class="relative w-44">
         <i class="fa-solid fa-magnifying-glass pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-ink-faint" aria-hidden="true"></i>
         <input v-model="query" class="field pl-8" type="search" placeholder="Ara" :disabled="results.length === 0" />
       </div>
 
+      <span v-if="selectedIds.length > 0" class="pill bg-brand-400/90 text-[#1d1d1f]">
+        {{ selectedIds.length }} seçili
+        <button class="ml-0.5 opacity-70 hover:opacity-100" type="button" title="Seçimi kaldır" @click="clearSelection">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </span>
+
       <div class="ml-auto flex items-center gap-1.5">
-        <button class="btn btn-glass" type="button" :disabled="results.length === 0" title="Metin olarak dışa aktar" @click="emit('export', 'txt')">
-          <i class="fa-solid fa-file-lines" aria-hidden="true"></i>TXT
-        </button>
-        <button class="btn btn-glass" type="button" :disabled="results.length === 0" title="CSV olarak dışa aktar" @click="emit('export', 'csv')">
-          <i class="fa-solid fa-file-csv" aria-hidden="true"></i>CSV
-        </button>
-        <button class="btn btn-glass" type="button" :disabled="results.length === 0" title="PDF olarak dışa aktar" @click="emit('export', 'pdf')">
-          <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>PDF
+        <button class="btn btn-glass" type="button" title="Dışa aktar" :disabled="results.length === 0" @click="emit('export')">
+          <i class="fa-solid fa-file-export" aria-hidden="true"></i>Dışa aktar
         </button>
         <button class="btn btn-danger ml-1" type="button" :disabled="results.length === 0" @click="emit('clear')">
           <i class="fa-solid fa-trash-can" aria-hidden="true"></i>Temizle
@@ -82,6 +123,9 @@ function dateOf(iso) {
       <table class="w-full text-[13px]">
         <thead class="sticky top-0 bg-glass-raised text-left text-[11px] font-semibold tracking-wide text-ink-muted uppercase backdrop-blur-xl">
           <tr>
+            <th class="w-8 px-3 py-2.5">
+              <input type="checkbox" class="h-4 w-4 accent-brand-500" :checked="allOnPageSelected" :disabled="pageRows.length === 0" title="Sayfadakileri seç" @change="togglePage" />
+            </th>
             <th class="px-3 py-2.5">İlan</th>
             <th class="px-3 py-2.5">Konum</th>
             <th class="px-3 py-2.5">Fiyat</th>
@@ -90,7 +134,15 @@ function dateOf(iso) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="record in pageRows" :key="record.id" class="border-t border-row-line align-top transition-colors hover:bg-hover">
+          <tr
+            v-for="record in pageRows"
+            :key="record.id"
+            class="border-t border-row-line align-top transition-colors hover:bg-hover"
+            :class="{ 'bg-brand-400/10': selectedSet.has(record.id) }"
+          >
+            <td class="px-3 py-2.5">
+              <input type="checkbox" class="h-4 w-4 accent-brand-500" :checked="selectedSet.has(record.id)" @change="toggleRow(record.id)" />
+            </td>
             <td class="px-3 py-2.5">
               <a href="#" class="font-semibold hover:underline" @click.prevent="emit('open', record.url)">{{ record.title }}</a>
               <div class="mt-0.5 text-[11px] text-ink-muted">
@@ -111,13 +163,13 @@ function dateOf(iso) {
             <td class="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap text-ink-muted">{{ dateOf(record.seenAt) }}</td>
           </tr>
           <tr v-if="results.length === 0">
-            <td colspan="5" class="px-3 py-14 text-center text-[13px] text-ink-muted">
+            <td colspan="6" class="px-3 py-14 text-center text-[13px] text-ink-muted">
               <i class="fa-regular fa-folder-open mb-2 block text-3xl text-ink-faint" aria-hidden="true"></i>
               Henüz ilan yok. Tarama bittiğinde bulunan sahibinden ilanları burada listelenir.
             </td>
           </tr>
           <tr v-else-if="filtered.length === 0">
-            <td colspan="5" class="px-3 py-8 text-center text-[13px] text-ink-muted">Aramayla eşleşen ilan yok.</td>
+            <td colspan="6" class="px-3 py-8 text-center text-[13px] text-ink-muted">Aramayla eşleşen ilan yok.</td>
           </tr>
         </tbody>
       </table>

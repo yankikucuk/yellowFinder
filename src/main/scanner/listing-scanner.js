@@ -14,6 +14,7 @@
 
 import { buildSearchUrl, absoluteListingUrl, listingIdFromUrl, isSiteUrl, PAGE_SIZE } from "../../shared/search-url.js";
 import { classifySeller, collectPhones } from "./listing-classifier.js";
+import { searchPairs } from "../storage/settings-store.js";
 
 /**
  * @typedef {object} ScanEvent
@@ -117,12 +118,14 @@ export class ListingScanner {
     /** @type {ScanSummary} */
     const summary = { newListings: 0, visited: 0, stoppedByBlock: false, cancelled: false };
     try {
-      for (const categorySlug of settings.categories) {
-        for (const citySlug of settings.cities) {
-          const outcome = await this.#scanSearch({ categorySlug, citySlug, settings, summary });
-          if (outcome === "stop") {
-            return summary;
-          }
+      const pairs = searchPairs(settings);
+      if (pairs.length === 0) {
+        this.onEvent({ level: "warning", message: "Etkin bir arama profili yok. Soldan bir profil açın ve kategori ile şehir seçin." });
+      }
+      for (const { categorySlug, citySlug } of pairs) {
+        const outcome = await this.#scanSearch({ categorySlug, citySlug, settings, summary });
+        if (outcome === "stop") {
+          return summary;
         }
       }
       this.onEvent({

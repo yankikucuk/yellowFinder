@@ -50,7 +50,7 @@ contextBridge.exposeInMainWorld("yellowFinder", {
   startScan: () => ipcRenderer.invoke(INVOKE.startScan),
   stopScan: () => ipcRenderer.invoke(INVOKE.stopScan),
   openSite: () => ipcRenderer.invoke(INVOKE.openSite),
-  exportResults: (format) => ipcRenderer.invoke(INVOKE.exportResults, format),
+  exportResults: (format, selection) => ipcRenderer.invoke(INVOKE.exportResults, format, selection),
   checkForUpdates: () => ipcRenderer.invoke(INVOKE.checkForUpdates),
   installUpdate: () => ipcRenderer.invoke(INVOKE.installUpdate),
   openExternal: (url) => ipcRenderer.invoke(INVOKE.openExternal, url),
