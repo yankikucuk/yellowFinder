@@ -54,7 +54,7 @@ build/icon.png          Source icon; electron-builder derives icns/ico from it
 
 ## Develop
 
-Requires Node 22 or newer.
+Requires Node 22.13 or newer (the built in `node:sqlite` module). CI and the Electron runtime use Node 24.
 
 ```
 npm install
@@ -64,8 +64,12 @@ npm run lint       # eslint
 npx electron . --smoke-test   # boots the app, prints renderer console output, exits 0 when clean
 ```
 
-Settings and results live in Electron's userData folder
-(`~/Library/Application Support/yellowFinder` on macOS).
+Settings (`settings.json`) and the listing database (`results.sqlite`) live
+in Electron's userData folder (`~/Library/Application Support/yellowfinder`
+on macOS). A listing that was opened is not opened again: owner and agency
+verdicts are final, listings without a visible phone number are retried
+after three days, and visit history older than 180 days is dropped. See
+[docs/adr/0004-sqlite-store.md](docs/adr/0004-sqlite-store.md).
 
 ## Build installers locally
 

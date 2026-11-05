@@ -35,7 +35,8 @@ const SMOKE_TEST_DURATION_MS = 6_000;
 let controlWindow = null;
 
 const settingsStore = new SettingsStore(join(app.getPath("userData"), "settings.json"));
-const resultsStore = new ResultsStore(join(app.getPath("userData"), "results.json"));
+const resultsStore = new ResultsStore(join(app.getPath("userData"), "results.sqlite"));
+resultsStore.importLegacyJson(join(app.getPath("userData"), "results.json"));
 const siteSession = new SiteSession();
 
 /**
@@ -217,4 +218,5 @@ app.on("window-all-closed", () => {
 app.on("before-quit", () => {
   scheduler.stop();
   siteSession.close();
+  resultsStore.close();
 });

@@ -16,7 +16,7 @@
   "type": "module",
   "main": "src/main/index.js",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13"
   },
   "scripts": {
     "dev": "npm run build:renderer && electron .",

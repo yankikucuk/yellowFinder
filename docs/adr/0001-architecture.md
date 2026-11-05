@@ -12,8 +12,8 @@ session on sahibinden.com and offer a small control interface.
 - Electron. The main process is plain ES modules loaded directly by
   Electron (no bundler), the renderer is Vue 3 built by Vite into
   `dist/renderer`, the preload is a sandboxed CommonJS context bridge.
-- No database. Settings and results are JSON files in `userData`,
-  read and written by small store classes.
+- Settings are a JSON file in `userData` read by a small store class.
+  Listings started the same way; ADR 0004 moved them to SQLite.
 - Everything that knows about the site's markup lives in
   `src/main/scanner/selectors.js`; everything that runs inside the site's
   pages lives in `page-scripts.js` as reviewable functions.

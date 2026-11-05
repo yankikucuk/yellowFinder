@@ -118,7 +118,7 @@ export class ListingScanner {
         });
         break;
       }
-      const fresh = rows.filter((row) => row.id && !this.results.hasVisited(row.id));
+      const fresh = rows.filter((row) => row.id && !this.results.shouldSkip(row.id));
       this.onEvent({ level: "info", message: `${rows.length} ilan listelendi, ${fresh.length} tanesi yeni.` });
       for (const row of fresh) {
         if (this.cancelRequested) {
@@ -159,16 +159,16 @@ export class ListingScanner {
     const detail = await this.session.readDetail();
     const seller = classifySeller(detail);
     if (seller === "agency") {
-      this.results.markSkipped(id);
+      this.results.markSkipped(id, "agency");
       this.onEvent({ level: "info", message: `Emlakçı ilanı atlandı: ${row.title}` });
       return "continue";
     }
     const phones = collectPhones(detail);
     if (phones.length === 0) {
-      this.results.markSkipped(id);
+      this.results.markSkipped(id, "no-phone");
       this.onEvent({
         level: "warning",
-        message: `Telefon bulunamadı (${seller === "unknown" ? "satıcı türü belirsiz" : "sahibinden"}): ${row.title}. Giriş yapılmamış olabilir.`
+        message: `Telefon bulunamadı (${seller === "unknown" ? "satıcı türü belirsiz" : "sahibinden"}): ${row.title}. Giriş yapılmamış olabilir; birkaç gün sonra yeniden denenecek.`
       });
       return "continue";
     }
