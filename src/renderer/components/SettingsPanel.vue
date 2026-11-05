@@ -117,13 +117,17 @@ function save() {
       </div>
     </div>
 
-    <div class="mt-3">
-      <span class="label">Ek sorgu parametreleri</span>
+    <details class="mt-3 group">
+      <summary class="label cursor-pointer list-none">
+        <i class="fa-solid fa-chevron-right mr-1 text-[9px] transition-transform group-open:rotate-90" aria-hidden="true"></i>
+        Gelişmiş
+      </summary>
+      <span class="label mt-2">Ek sorgu parametreleri (isteğe bağlı)</span>
       <input v-model="draft.extraQuery" class="field font-mono text-xs" type="text" placeholder="a=b&c=d" />
       <p class="mt-1.5 text-[11.5px] leading-snug text-ink-muted">
-        Sitede filtre seçip adres çubuğundaki soru işaretinden sonrasını yapıştırın. "Kimden: Sahibinden" filtresi burada verilirse emlakçı ilanları hiç açılmaz.
+        Sitede seçtiğiniz ek filtreleri adres çubuğundan kopyalayıp buraya yapıştırabilirsiniz. Emlakçı ilanları bundan bağımsız olarak her zaman elenir.
       </p>
-    </div>
+    </details>
 
     <button class="btn mt-4 w-full justify-center" :class="dirty ? 'btn-primary' : 'btn-glass'" type="button" :disabled="!dirty" @click="save">
       <i class="fa-solid" :class="dirty ? 'fa-floppy-disk' : 'fa-check'" aria-hidden="true"></i>

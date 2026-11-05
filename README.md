@@ -117,6 +117,6 @@ Notes:
 All selectors are in `src/main/scanner/selectors.js`. If the log says no
 rows were found or no phone numbers were found while you are logged in,
 open the site in the app window, inspect the page and adjust the
-candidates there. The "Ek sorgu parametreleri" field lets you append any
-filter you set on the site (such as the "Kimden" facet) to every search
-URL, which avoids opening agency listings at all.
+candidates there. Agency listings are always filtered out by the scanner itself; the
+optional "Gelişmiş" field only lets you append extra filters you set on
+the site to every search URL.

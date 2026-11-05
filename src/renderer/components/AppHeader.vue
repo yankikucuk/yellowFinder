@@ -15,14 +15,11 @@ const emit = defineEmits(["open-site", "start", "stop"]);
 <template>
   <header class="glass-raised mx-4 mt-4 flex items-center justify-between px-5 py-3">
     <div class="flex items-center gap-3">
-      <span class="btn-primary flex h-11 w-11 items-center justify-center rounded-2xl text-ink">
-        <i class="fa-solid fa-magnifying-glass-location text-lg" aria-hidden="true"></i>
+      <span class="btn-primary flex h-10 w-10 items-center justify-center rounded-xl text-ink">
+        <i class="fa-solid fa-magnifying-glass-location text-base" aria-hidden="true"></i>
       </span>
-      <div>
-        <h1 class="text-[15px] leading-tight font-bold tracking-tight">yellowFinder</h1>
-        <p class="text-[11px] font-medium text-ink-muted">sahibinden.com · emlakçısı olmayan ilanlar</p>
-      </div>
-      <span class="pill-glass font-mono">v{{ version }}</span>
+      <h1 class="text-[17px] leading-none font-bold tracking-tight">yellowFinder</h1>
+      <span class="pill-glass font-mono leading-none">v{{ version }}</span>
     </div>
 
     <div class="flex items-center gap-2">

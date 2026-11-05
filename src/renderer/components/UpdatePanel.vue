@@ -27,22 +27,26 @@ const icon = computed(() => ICONS[props.status.state] ?? ICONS.idle);
 <template>
   <section class="card">
     <h2 class="card-title">
-      <i class="fa-solid fa-arrows-rotate text-brand-600" aria-hidden="true"></i>
+      <i class="fa-solid fa-cloud-arrow-down text-brand-600" aria-hidden="true"></i>
       Güncelleme
+      <button
+        class="btn-icon ml-auto"
+        type="button"
+        title="Güncellemeleri denetle"
+        aria-label="Güncellemeleri denetle"
+        :disabled="status.state === 'checking'"
+        @click="emit('check')"
+      >
+        <i class="fa-solid fa-arrows-rotate" :class="{ 'fa-spin': status.state === 'checking' }" aria-hidden="true"></i>
+      </button>
     </h2>
-    <p class="glass-inset mb-3 flex items-start gap-2.5 px-3 py-2.5 text-[13px] text-ink-muted">
+    <p class="glass-inset flex items-start gap-2.5 px-3 py-2.5 text-[13px] text-ink-muted">
       <i class="fa-solid mt-0.5" :class="icon" aria-hidden="true"></i>
       <span>{{ status.message || "Henüz denetlenmedi." }}</span>
     </p>
-    <div class="flex gap-2">
-      <button class="btn btn-glass" type="button" :disabled="status.state === 'checking'" @click="emit('check')">
-        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-        Denetle
-      </button>
-      <button v-if="status.state === 'downloaded'" class="btn btn-primary" type="button" @click="emit('install')">
-        <i class="fa-solid fa-power-off" aria-hidden="true"></i>
-        Yeniden başlat ve kur
-      </button>
-    </div>
+    <button v-if="status.state === 'downloaded'" class="btn btn-primary mt-3 w-full justify-center" type="button" @click="emit('install')">
+      <i class="fa-solid fa-power-off" aria-hidden="true"></i>
+      Yeniden başlat ve kur
+    </button>
   </section>
 </template>
