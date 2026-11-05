@@ -13,7 +13,8 @@ proxies and fingerprint tricks to get through.
 
 - The app opens the site in a normal, visible Electron window with a
   persistent session partition. The user logs in there with their own
-  account.
+  account. The window presents the plain Chrome user agent (see the
+  amendment below).
 - Pages are loaded one at a time with a random pause (default 4 to 9
   seconds) between loads. Listings that were already visited are never
   loaded again.
@@ -33,3 +34,16 @@ proxies and fingerprint tricks to get through.
   user could read by hand.
 - A stricter protection on the site shows up as repeated "blocked" events
   rather than as silent empty results.
+
+## Amendment 2026-11-05: plain Chrome user agent
+
+The site refuses the login page to any browser whose user agent carries an
+"Electron/" token, so the user could not log in at all. The site session
+now removes the application and Electron tokens from the default user
+agent and keeps the Chrome identity of the Chromium that renders the page
+(`src/main/scanner/user-agent.js`), as Electron's documentation recommends.
+
+This is the whole extent of it. Patching `navigator` properties,
+fingerprint changes, stealth plugins, proxies and automated handling of
+verification steps remain out of scope. If the site still blocks the login
+after this change, the answer is to say so, not to go further.

@@ -45,6 +45,7 @@ src/
       page-scripts.js   Read-only DOM scripts executed inside the site pages
       selectors.js      Every CSS selector and page marker in one place
       listing-classifier.js  Owner vs agency decision, phone collection
+      user-agent.js     Plain Chrome user agent for the site window (ADR 0002 amendment)
     exporters/          TXT, CSV and PDF writers (pdf-document.js is the printable HTML)
   preload/index.cjs     Context bridge exposed to the renderer as window.yellowFinder
   renderer/             Vue 3 interface built by Vite into dist/renderer

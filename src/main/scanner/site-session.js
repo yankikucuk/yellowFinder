@@ -10,8 +10,9 @@
  * @module main/scanner/site-session
  */
 
-import { BrowserWindow } from "electron";
+import { app, BrowserWindow, session } from "electron";
 import { PAGE_SCRIPTS } from "./page-scripts.js";
+import { plainChromeUserAgent } from "./user-agent.js";
 import { SITE_ORIGIN } from "../../shared/search-url.js";
 
 /** Session partition that keeps the site's cookies on disk. */
@@ -45,6 +46,8 @@ export class SiteSession {
       }
       return this.window;
     }
+    const siteSession = session.fromPartition(SITE_PARTITION);
+    siteSession.setUserAgent(plainChromeUserAgent(siteSession.getUserAgent(), app.getName()));
     this.window = new BrowserWindow({
       width: 1200,
       height: 860,
