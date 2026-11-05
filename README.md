@@ -72,6 +72,7 @@ npm run lint       # eslint
 npx electron . --smoke-test   # boots the app, prints renderer console output, exits 0 when clean
 npm run icon                  # re-renders build/icon*.png after editing build/icon.svg
 YELLOWFINDER_SMOKE_SCREENSHOT=/tmp/ui.png npx electron . --smoke-test   # also saves a screenshot of the window
+YELLOWFINDER_SMOKE_SIZE=1920x1200 YELLOWFINDER_SMOKE_SCREENSHOT=/tmp/ui-large.png npx electron . --smoke-test   # same, at a larger window size
 ```
 
 Settings (`settings.json`) and the listing database (`results.sqlite`) live

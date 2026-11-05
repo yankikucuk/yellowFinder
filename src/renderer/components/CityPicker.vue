@@ -77,7 +77,7 @@ function clearAll() {
       <input v-model="query" class="field pl-8" type="search" placeholder="Şehir ara" />
     </div>
 
-    <div class="glass-inset scroll-thin max-h-44 overflow-y-auto p-1">
+    <div class="glass-inset scroll-thin max-h-[24vh] min-h-44 overflow-y-auto p-1">
       <label v-for="city in filtered" :key="city.slug" class="check">
         <input type="checkbox" :checked="selected.includes(city.slug)" @change="toggle(city.slug)" />
         {{ city.label }}

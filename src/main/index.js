@@ -116,10 +116,13 @@ const updater = createUpdater((status) => {
  */
 function createControlWindow() {
   controlWindow = new BrowserWindow({
+    // The default size is also the minimum: the layout is designed for it and
+    // grows from there (resizable, maximisable and full screen capable).
     width: 1180,
     height: 780,
-    minWidth: 900,
-    minHeight: 600,
+    minWidth: 1180,
+    minHeight: 780,
+    fullscreenable: true,
     title: "yellowFinder",
     backgroundColor: "#fffbe6",
     webPreferences: {
@@ -147,6 +150,12 @@ function createControlWindow() {
  */
 function attachSmokeTest(window) {
   let sawError = false;
+  // YELLOWFINDER_SMOKE_SIZE=<width>x<height> resizes the window so larger layouts can be checked.
+  const sizeMatch = /^(\d+)x(\d+)$/.exec(process.env.YELLOWFINDER_SMOKE_SIZE ?? "");
+  if (sizeMatch) {
+    window.setSize(Number(sizeMatch[1]), Number(sizeMatch[2]));
+    window.center();
+  }
   window.webContents.on("console-message", (details) => {
     const level = details.level ?? "info";
     if (level === "error") {

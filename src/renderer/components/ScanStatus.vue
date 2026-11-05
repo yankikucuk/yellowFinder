@@ -42,7 +42,8 @@ function timeOf(iso) {
 </script>
 
 <template>
-  <section class="card flex max-h-72 flex-col">
+  <!-- The log takes about a third of the height and grows with the window; the table gets the rest. -->
+  <section class="card flex h-[32vh] min-h-64 shrink-0 flex-col">
     <div class="mb-3 flex items-center gap-3">
       <span v-if="running" class="pill bg-brand-400/80 text-ink">
         <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>

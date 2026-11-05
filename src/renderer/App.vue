@@ -158,7 +158,8 @@ onBeforeUnmount(() => {
       @stop="bridge.stopScan()"
     />
 
-    <main class="grid min-h-0 flex-1 grid-cols-[360px_1fr] gap-4 p-4">
+    <!-- Sidebar widens a step on large screens; the content column takes the rest. -->
+    <main class="grid min-h-0 flex-1 grid-cols-[360px_1fr] gap-4 p-4 2xl:grid-cols-[420px_1fr] 2xl:gap-5 2xl:p-5">
       <aside class="scroll-thin flex min-h-0 flex-col gap-4 overflow-y-auto pr-1 pb-1">
         <SettingsPanel
           v-if="settings"
