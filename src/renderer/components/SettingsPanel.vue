@@ -1,9 +1,12 @@
 <script setup>
 /**
  * Lets the user pick categories, cities and timing. Changes are sent to the
- * main process with the "save" event; the parent stores the result.
+ * main process with the "save" event; the parent stores the result. The
+ * panel tracks whether the draft differs from the saved settings so the
+ * save button only lights up when there is something to save.
  */
 import { computed, reactive, watch } from "vue";
+import CityPicker from "./CityPicker.vue";
 
 const props = defineProps({
   settings: { type: Object, required: true },
@@ -30,6 +33,8 @@ watch(
   (next) => Object.assign(draft, copySettings(next))
 );
 
+const dirty = computed(() => JSON.stringify(copySettings(draft)) !== JSON.stringify(copySettings(props.settings)));
+
 const categoryGroups = computed(() => {
   const groups = new Map();
   for (const category of props.categories) {
@@ -41,12 +46,12 @@ const categoryGroups = computed(() => {
   return [...groups.entries()];
 });
 
-function toggle(list, slug) {
-  const index = list.indexOf(slug);
+function toggleCategory(slug) {
+  const index = draft.categories.indexOf(slug);
   if (index === -1) {
-    list.push(slug);
+    draft.categories.push(slug);
   } else {
-    list.splice(index, 1);
+    draft.categories.splice(index, 1);
   }
 }
 
@@ -57,96 +62,70 @@ function save() {
 
 <template>
   <section class="card">
-    <h2>Kategoriler</h2>
-    <div v-for="[group, items] in categoryGroups" :key="group" class="group">
-      <div class="muted group-title">{{ group }}</div>
+    <h2 class="card-title">
+      <i class="fa-solid fa-layer-group text-brand-600" aria-hidden="true"></i>
+      Kategoriler
+      <span class="ml-auto text-xs font-normal text-ink-muted">{{ draft.categories.length }} seçili</span>
+    </h2>
+    <div v-for="[group, items] in categoryGroups" :key="group" class="mb-2">
+      <div class="mb-1 px-2 text-[11px] font-semibold tracking-wide text-ink-muted uppercase">{{ group }}</div>
       <label v-for="category in items" :key="category.slug" class="check">
-        <input type="checkbox" :checked="draft.categories.includes(category.slug)" @change="toggle(draft.categories, category.slug)" />
+        <input type="checkbox" :checked="draft.categories.includes(category.slug)" @change="toggleCategory(category.slug)" />
         {{ category.label }}
       </label>
     </div>
   </section>
 
   <section class="card">
-    <h2>Şehirler <span class="muted">({{ draft.cities.length }})</span></h2>
-    <div class="cities">
-      <label v-for="city in cities" :key="city.slug" class="check">
-        <input type="checkbox" :checked="draft.cities.includes(city.slug)" @change="toggle(draft.cities, city.slug)" />
-        {{ city.label }}
-      </label>
-    </div>
+    <h2 class="card-title">
+      <i class="fa-solid fa-city text-brand-600" aria-hidden="true"></i>
+      Şehirler
+      <span class="ml-auto text-xs font-normal text-ink-muted">{{ draft.cities.length }} seçili</span>
+    </h2>
+    <CityPicker v-model="draft.cities" :cities="cities" />
   </section>
 
   <section class="card">
-    <h2>Zamanlama</h2>
-    <label class="field">
+    <h2 class="card-title">
+      <i class="fa-solid fa-clock text-brand-600" aria-hidden="true"></i>
+      Zamanlama
+    </h2>
+
+    <label class="check mb-3 -mx-2">
       <input v-model="draft.autoScan" type="checkbox" />
       Otomatik tarama açık
     </label>
-    <label class="field">
-      Aralık (dakika)
-      <input v-model.number="draft.intervalMinutes" type="number" min="15" max="1440" />
-    </label>
-    <label class="field">
-      Her arama için sayfa sayısı
-      <input v-model.number="draft.maxPagesPerSearch" type="number" min="1" max="20" />
-    </label>
-    <label class="field">
-      Sayfalar arası bekleme (sn, en az / en çok)
-      <span class="pair">
-        <input v-model.number="draft.minDelaySeconds" type="number" min="2" max="120" />
-        <input v-model.number="draft.maxDelaySeconds" type="number" min="2" max="300" />
-      </span>
-    </label>
-    <label class="field">
-      Ek sorgu parametreleri
-      <input v-model="draft.extraQuery" type="text" placeholder="siteden kopyalanan ?a=b&c=d" />
-      <span class="muted hint">Sitede filtre seçip adres çubuğundaki soru işaretinden sonrasını yapıştırın. "Kimden: Sahibinden" filtresi burada verilirse emlakçı ilanları hiç açılmaz.</span>
-    </label>
-    <button @click="save">Ayarları kaydet</button>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <span class="label">Aralık (dakika)</span>
+        <input v-model.number="draft.intervalMinutes" class="field" type="number" min="15" max="1440" />
+      </div>
+      <div>
+        <span class="label">Sayfa / arama</span>
+        <input v-model.number="draft.maxPagesPerSearch" class="field" type="number" min="1" max="20" />
+      </div>
+      <div>
+        <span class="label">En az bekleme (sn)</span>
+        <input v-model.number="draft.minDelaySeconds" class="field" type="number" min="2" max="120" />
+      </div>
+      <div>
+        <span class="label">En çok bekleme (sn)</span>
+        <input v-model.number="draft.maxDelaySeconds" class="field" type="number" min="2" max="300" />
+      </div>
+    </div>
+
+    <div class="mt-3">
+      <span class="label">Ek sorgu parametreleri</span>
+      <input v-model="draft.extraQuery" class="field font-mono text-xs" type="text" placeholder="a=b&c=d" />
+      <p class="mt-1 text-xs text-ink-muted">
+        Sitede filtre seçip adres çubuğundaki soru işaretinden sonrasını yapıştırın. "Kimden: Sahibinden" filtresi burada verilirse emlakçı ilanları hiç açılmaz.
+      </p>
+    </div>
+
+    <button class="btn mt-4 w-full justify-center" :class="dirty ? 'btn-primary' : 'btn-secondary'" type="button" :disabled="!dirty" @click="save">
+      <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+      {{ dirty ? "Ayarları kaydet" : "Ayarlar kayıtlı" }}
+    </button>
   </section>
 </template>
-
-<style scoped>
-.group {
-  margin-bottom: 8px;
-}
-
-.group-title {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 4px;
-}
-
-.check {
-  display: block;
-  padding: 2px 0;
-}
-
-.cities {
-  max-height: 220px;
-  overflow: auto;
-  columns: 2;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 10px;
-}
-
-.pair {
-  display: flex;
-  gap: 6px;
-}
-
-.pair input {
-  width: 50%;
-}
-
-.hint {
-  font-size: 12px;
-}
-</style>

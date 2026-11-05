@@ -11,6 +11,7 @@
 
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join, dirname } from "node:path";
+import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { SettingsStore } from "./storage/settings-store.js";
 import { ResultsStore } from "./storage/results-store.js";
@@ -157,7 +158,14 @@ function attachSmokeTest(window) {
     sawError = true;
     process.stdout.write(`[renderer:load-failed] ${code} ${description}\n`);
   });
-  setTimeout(() => {
+  setTimeout(async () => {
+    // YELLOWFINDER_SMOKE_SCREENSHOT=<file.png> saves the control window for a visual check.
+    const screenshotPath = process.env.YELLOWFINDER_SMOKE_SCREENSHOT;
+    if (screenshotPath) {
+      const image = await window.webContents.capturePage();
+      await writeFile(screenshotPath, image.toPNG());
+      process.stdout.write(`screenshot: ${screenshotPath}\n`);
+    }
     process.stdout.write(sawError ? "smoke test: FAILED\n" : "smoke test: OK\n");
     app.exit(sawError ? 1 : 0);
   }, SMOKE_TEST_DURATION_MS);

@@ -48,7 +48,7 @@ src/
       user-agent.js     Plain Chrome user agent for the site window (ADR 0002 amendment)
     exporters/          TXT, CSV and PDF writers (pdf-document.js is the printable HTML)
   preload/index.cjs     Context bridge exposed to the renderer as window.yellowFinder
-  renderer/             Vue 3 interface built by Vite into dist/renderer
+  renderer/             Vue 3 interface (Tailwind CSS 4, Font Awesome Free) built by Vite into dist/renderer
   shared/               Code used by both sides: catalogs, URL builder, phone parsing
 test/                   Unit tests (node:test)
 docs/adr/               Architecture decision records
@@ -70,6 +70,7 @@ npm test           # unit tests
 npm run lint       # eslint
 npx electron . --smoke-test   # boots the app, prints renderer console output, exits 0 when clean
 npm run icon                  # re-renders build/icon*.png after editing build/icon.svg
+YELLOWFINDER_SMOKE_SCREENSHOT=/tmp/ui.png npx electron . --smoke-test   # also saves a screenshot of the window
 ```
 
 Settings (`settings.json`) and the listing database (`results.sqlite`) live

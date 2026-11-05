@@ -1,10 +1,12 @@
 <script setup>
 /**
- * Root component: loads the bootstrap payload from the main process and
- * splits the screen into settings, status and results.
+ * Root component: loads the bootstrap payload from the main process, keeps
+ * the shared state and lays the screen out as header, sidebar and content.
  */
 import { onMounted, onBeforeUnmount, reactive, ref } from "vue";
+import AppHeader from "./components/AppHeader.vue";
 import SettingsPanel from "./components/SettingsPanel.vue";
+import UpdatePanel from "./components/UpdatePanel.vue";
 import ScanStatus from "./components/ScanStatus.vue";
 import ResultsTable from "./components/ResultsTable.vue";
 
@@ -38,6 +40,16 @@ function pushEvent(event) {
 }
 
 /**
+ * Adds a line produced by the interface itself (exports, errors).
+ *
+ * @param {string} level Event level.
+ * @param {string} message Message in Turkish.
+ */
+function note(level, message) {
+  pushEvent({ level, message, at: new Date().toISOString() });
+}
+
+/**
  * Pulls the initial state from the main process.
  */
 async function load() {
@@ -54,6 +66,7 @@ async function load() {
 
 async function saveSettings(partial) {
   settings.value = await bridge.updateSettings(partial);
+  note("info", "Ayarlar kaydedildi.");
 }
 
 async function refreshResults() {
@@ -77,6 +90,7 @@ function addFoundListing(record) {
 async function clearResults() {
   if (window.confirm("Tüm liste silinecek. Emin misiniz?")) {
     results.value = await bridge.clearResults();
+    note("info", "Liste temizlendi.");
   }
 }
 
@@ -84,11 +98,24 @@ async function exportResults(format) {
   try {
     const path = await bridge.exportResults(format);
     if (path) {
-      pushEvent({ level: "info", message: `Dışa aktarıldı: ${path}`, at: new Date().toISOString() });
+      note("info", `Dışa aktarıldı: ${path}`);
     }
   } catch (error) {
-    pushEvent({ level: "error", message: `Dışa aktarma başarısız: ${error.message}`, at: new Date().toISOString() });
+    note("error", `Dışa aktarma başarısız: ${error.message}`);
   }
+}
+
+async function copyPhone(phone) {
+  try {
+    await navigator.clipboard.writeText(phone);
+    note("info", `Kopyalandı: ${phone}`);
+  } catch {
+    note("warning", "Panoya kopyalanamadı.");
+  }
+}
+
+function clearLog() {
+  events.value = [];
 }
 
 onMounted(async () => {
@@ -122,21 +149,17 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="layout">
-    <header class="header">
-      <div>
-        <h1>yellowFinder</h1>
-        <span class="muted">sahibinden.com · emlakçısı olmayan ilanlar · v{{ version }}</span>
-      </div>
-      <div class="header-actions">
-        <button class="secondary" @click="bridge.openSite()">Siteyi aç / giriş yap</button>
-        <button v-if="!scanState.running" @click="bridge.startScan()">Şimdi tara</button>
-        <button v-else class="danger" @click="bridge.stopScan()">Taramayı durdur</button>
-      </div>
-    </header>
+  <div class="flex h-full flex-col">
+    <AppHeader
+      :version="version"
+      :running="scanState.running"
+      @open-site="bridge.openSite()"
+      @start="bridge.startScan()"
+      @stop="bridge.stopScan()"
+    />
 
-    <main class="columns">
-      <aside class="sidebar">
+    <main class="grid min-h-0 flex-1 grid-cols-[360px_1fr] gap-4 p-4">
+      <aside class="scroll-thin flex min-h-0 flex-col gap-4 overflow-y-auto pr-1">
         <SettingsPanel
           v-if="settings"
           :settings="settings"
@@ -144,75 +167,28 @@ onBeforeUnmount(() => {
           :categories="categories"
           @save="saveSettings"
         />
-        <section class="card">
-          <h2>Güncelleme</h2>
-          <p class="muted">{{ updateStatus.message || "Henüz denetlenmedi." }}</p>
-          <div class="row">
-            <button class="secondary" @click="bridge.checkForUpdates()">Denetle</button>
-            <button v-if="updateStatus.state === 'downloaded'" @click="bridge.installUpdate()">Yeniden başlat ve kur</button>
-          </div>
-        </section>
+        <UpdatePanel
+          :status="updateStatus"
+          @check="bridge.checkForUpdates()"
+          @install="bridge.installUpdate()"
+        />
       </aside>
 
-      <section class="content">
-        <ScanStatus :running="scanState.running" :next-run-at="scanState.nextRunAt" :events="events" />
+      <section class="flex min-h-0 min-w-0 flex-col gap-4">
+        <ScanStatus
+          :running="scanState.running"
+          :next-run-at="scanState.nextRunAt"
+          :events="events"
+          @clear="clearLog"
+        />
         <ResultsTable
           :results="results"
           @export="exportResults"
           @clear="clearResults"
           @open="bridge.openExternal"
+          @copy="copyPhone"
         />
       </section>
     </main>
   </div>
 </template>
-
-<style scoped>
-.layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 20px;
-  background: var(--card-tint);
-  border-bottom: 1px solid var(--border);
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.columns {
-  display: grid;
-  grid-template-columns: 340px 1fr;
-  gap: 16px;
-  padding: 16px;
-  flex: 1;
-  min-height: 0;
-}
-
-.sidebar,
-.content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  overflow: auto;
-}
-
-.row {
-  display: flex;
-  gap: 8px;
-}
-</style>
