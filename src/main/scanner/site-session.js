@@ -10,10 +10,11 @@
  * @module main/scanner/site-session
  */
 
-import { app, BrowserWindow, session } from "electron";
+import { app, BrowserWindow, Menu, session } from "electron";
+import { isAllowedPopup } from "./popup-policy.js";
 import { PAGE_SCRIPTS } from "./page-scripts.js";
 import { plainChromeUserAgent } from "./user-agent.js";
-import { SITE_ORIGIN } from "../../shared/search-url.js";
+import { SITE_ORIGIN, SITE_LOGIN_URL } from "../../shared/search-url.js";
 
 /** Session partition that keeps the site's cookies on disk. */
 const SITE_PARTITION = "persist:sahibinden";
@@ -63,8 +64,31 @@ export class SiteSession {
         backgroundThrottling: false
       }
     });
-    // Pop-ups from the site would open extra windows on the same session; keep everything in this one.
-    this.window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+    // Sign-in pop-ups (site, Google, Apple, Facebook) open as child windows on the
+    // same session so their login counts; any other pop-up stays blocked.
+    this.window.webContents.setWindowOpenHandler(({ url }) => {
+      if (!isAllowedPopup(url)) {
+        return { action: "deny" };
+      }
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          parent: this.window,
+          width: 520,
+          height: 720,
+          title: "YellowFinder · giriş",
+          webPreferences: { partition: SITE_PARTITION, contextIsolation: true, nodeIntegration: false, sandbox: true }
+        }
+      };
+    });
+    this.#attachNavigationMenu(this.window.webContents);
+    this.window.webContents.on("did-create-window", (child) => this.#attachNavigationMenu(child.webContents));
+    // Show where the user is, since the window has no address bar.
+    this.window.webContents.on("page-title-updated", (event, title) => {
+      event.preventDefault();
+      const host = this.#currentHost();
+      this.window?.setTitle(`YellowFinder · ${host ? `${host} · ` : ""}${title}`);
+    });
     this.window.on("closed", () => {
       this.window = null;
     });
@@ -72,12 +96,63 @@ export class SiteSession {
   }
 
   /**
-   * Opens the site's home page so the user can log in or solve a challenge.
+   * Opens the login page so the user can sign in or solve a challenge. When
+   * the session is already logged in, the site sends the user on by itself.
    */
   async openForUser() {
     const window = this.ensureWindow(true);
-    await this.#load(window, SITE_ORIGIN);
+    await this.#load(window, SITE_LOGIN_URL);
     window.focus();
+  }
+
+  /** @returns {boolean} True while the site window is on screen, which means the user may be using it. */
+  isVisibleToUser() {
+    return Boolean(this.window && !this.window.isDestroyed() && this.window.isVisible());
+  }
+
+  /**
+   * Writes the site's cookies to disk. Called on quit so a login made just
+   * before closing the app is not lost.
+   *
+   * @returns {Promise<void>} Resolves when the cookie store is flushed.
+   */
+  async flushCookies() {
+    await session.fromPartition(SITE_PARTITION).cookies.flushStore();
+  }
+
+  /**
+   * Adds a right-click menu with back, forward, reload and the login page,
+   * because the window has no browser toolbar.
+   *
+   * @param {import("electron").WebContents} contents Page to attach to.
+   */
+  #attachNavigationMenu(contents) {
+    contents.on("context-menu", (_event, params) => {
+      const history = contents.navigationHistory;
+      const template = [
+        { label: "Geri", enabled: history.canGoBack(), click: () => history.goBack() },
+        { label: "İleri", enabled: history.canGoForward(), click: () => history.goForward() },
+        { label: "Yenile", click: () => contents.reload() },
+        { type: "separator" },
+        { label: "Giriş sayfası", click: () => contents.loadURL(SITE_LOGIN_URL) },
+        { label: "Ana sayfa", click: () => contents.loadURL(SITE_ORIGIN) }
+      ];
+      if (params.isEditable) {
+        template.unshift({ role: "cut", label: "Kes" }, { role: "copy", label: "Kopyala" }, { role: "paste", label: "Yapıştır" }, { type: "separator" });
+      } else if (params.selectionText) {
+        template.unshift({ role: "copy", label: "Kopyala" }, { type: "separator" });
+      }
+      Menu.buildFromTemplate(template).popup();
+    });
+  }
+
+  /** @returns {string} Host of the page currently shown, or an empty string. */
+  #currentHost() {
+    try {
+      return new URL(this.window.webContents.getURL()).hostname;
+    } catch {
+      return "";
+    }
   }
 
   /**

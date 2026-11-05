@@ -46,6 +46,9 @@ let lastUpdateStatus = { state: "idle", message: "" };
  */
 let waitingForUser = false;
 
+/** Promise of the scan in progress, or null. Lets "Siteyi aç" wait for the scan to release the window. */
+let currentScan = null;
+
 const settingsStore = new SettingsStore(join(app.getPath("userData"), "settings.json"));
 const resultsStore = new ResultsStore(join(app.getPath("userData"), "results.sqlite"));
 resultsStore.importLegacyJson(join(app.getPath("userData"), "results.json"));
@@ -93,16 +96,38 @@ async function runScan(trigger) {
     logScanEvent("info", "Otomatik tarama bekletildi: site penceresinde giriş veya doğrulama tamamlanmayı bekliyor.");
     return;
   }
+  // The scan and the login share one window; a scheduled scan must not navigate it while the user is in it.
+  if (trigger === "scheduled" && siteSession.isVisibleToUser()) {
+    logScanEvent("info", "Otomatik tarama bekletildi: site penceresi açık. Pencereyi kapatınca bir sonraki tarama normal çalışır.");
+    return;
+  }
   waitingForUser = false;
   broadcast(EVENTS.scanState, { running: true, nextRunAt: scheduler.getNextRunAt() });
+  currentScan = scanner.run(settingsStore.get());
   try {
-    const summary = await scanner.run(settingsStore.get());
+    const summary = await currentScan;
     waitingForUser = summary.stoppedByBlock;
   } catch (error) {
     logScanEvent("error", `Tarama hatası: ${error.message}`);
   } finally {
+    currentScan = null;
     broadcast(EVENTS.scanState, { running: false, nextRunAt: scheduler.getNextRunAt() });
   }
+}
+
+/**
+ * Stops a running scan and waits for it to let go of the site window, so the
+ * window can be handed to the user.
+ *
+ * @returns {Promise<void>} Resolves when no scan is running.
+ */
+async function stopScanAndWait() {
+  if (!currentScan) {
+    return;
+  }
+  scanner.cancel();
+  logScanEvent("info", "Site sizin için açılıyor; süren tarama durduruluyor.");
+  await currentScan.catch(() => {});
 }
 
 const scheduler = new ScanScheduler(() => runScan("scheduled"));
@@ -236,7 +261,9 @@ function registerIpc() {
 
   ipcMain.handle(INVOKE.openSite, async () => {
     try {
+      await stopScanAndWait();
       await siteSession.openForUser();
+      logScanEvent("info", "Giriş sayfası açıldı. \"Beni hatırla\" kutusunu işaretlerseniz oturum uygulama kapanınca da kalır. Sağ tıkla geri, ileri ve yenile menüsü açılır.");
     } catch (error) {
       logScanEvent("error", `Site açılamadı: ${error.message}`);
     }
@@ -284,8 +311,23 @@ app.on("window-all-closed", () => {
   }
 });
 
-app.on("before-quit", () => {
+/** Set once the cookie flush on quit has run, so the second quit goes through. */
+let readyToQuit = false;
+
+app.on("before-quit", (event) => {
+  if (readyToQuit) {
+    return;
+  }
+  // Hold the quit until the site's cookies are on disk, then quit for real.
+  event.preventDefault();
+  readyToQuit = true;
   scheduler.stop();
-  siteSession.close();
-  resultsStore.close();
+  siteSession
+    .flushCookies()
+    .catch(() => {})
+    .finally(() => {
+      siteSession.close();
+      resultsStore.close();
+      app.quit();
+    });
 });

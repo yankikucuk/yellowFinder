@@ -12,8 +12,10 @@ GitHub releases.
    categories (for example "Satılık Daire") and cities, and can be switched
    off without losing its selection. The gear in the header opens the app
    settings: colour scheme (system, light, dark) and software updates.
-2. The app opens sahibinden.com in its own browser window. You log in
-   there once; the session is kept between launches.
+2. "Siteyi aç / giriş yap" opens the login page in the app's own browser
+   window. Sign in there once and tick "Beni hatırla"; the session is kept
+   between launches. Right-click in that window for back, forward and
+   reload. While the window is open, scheduled scans wait.
 3. Every hour (configurable) the app loads the newest result pages for each
    category and city, opens each listing it has not seen before, reads the
    "Kimden" attribute and keeps the listing only when the site says
@@ -49,6 +51,7 @@ src/
       selectors.js      Every CSS selector and page marker in one place
       listing-classifier.js  Owner vs agency decision, phone collection
       user-agent.js     Plain Chrome user agent for the site window (ADR 0002 amendment)
+      popup-policy.js   Which sign-in pop-ups (site, Google, Apple, Facebook) may open
     exporters/          TXT, CSV and PDF writers (pdf-document.js is the printable HTML)
   preload/index.cjs     Context bridge exposed to the renderer as window.yellowFinder
   renderer/             Vue 3 interface (Tailwind CSS 4, Font Awesome Free, Montserrat and

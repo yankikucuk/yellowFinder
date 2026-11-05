@@ -12,6 +12,9 @@
 
 export const SITE_ORIGIN = "https://www.sahibinden.com";
 
+/** Login page the "Siteyi aç / giriş yap" button opens. */
+export const SITE_LOGIN_URL = "https://secure.sahibinden.com/giris";
+
 /** Listings per result page. The site accepts 20 or 50. */
 export const PAGE_SIZE = 50;
 
