@@ -28,7 +28,7 @@
     "dist:win": "npm run build:renderer && electron-builder --win --publish never",
     "dist:linux": "npm run build:renderer && electron-builder --linux --publish never",
     "release": "npm run build:renderer && electron-builder --publish always",
-    "test": "node --test test/",
+    "test": "node --test \"test/**/*.test.js\"",
     "lint": "eslint ."
   },
   "dependencies": {
