@@ -9,7 +9,8 @@ GitHub releases.
 ## How it works
 
 1. You pick categories (for example "Satılık Daire") and cities in the
-   sidebar and save.
+   sidebar and save. The gear in the header opens the app settings:
+   colour scheme (system, light, dark) and software updates.
 2. The app opens sahibinden.com in its own browser window. You log in
    there once; the session is kept between launches.
 3. Every hour (configurable) the app loads the newest result pages for each
@@ -73,6 +74,7 @@ npx electron . --smoke-test   # boots the app, prints renderer console output, e
 npm run icon                  # re-renders build/icon*.png after editing build/icon.svg
 YELLOWFINDER_SMOKE_SCREENSHOT=/tmp/ui.png npx electron . --smoke-test   # also saves a screenshot of the window
 YELLOWFINDER_SMOKE_SIZE=1920x1200 YELLOWFINDER_SMOKE_SCREENSHOT=/tmp/ui-large.png npx electron . --smoke-test   # same, at a larger window size
+YELLOWFINDER_SMOKE_CLICK='button[title="Ayarlar"]' YELLOWFINDER_SMOKE_SCREENSHOT=/tmp/ui-settings.png npx electron . --smoke-test   # clicks an element first
 ```
 
 Settings (`settings.json`) and the listing database (`results.sqlite`) live

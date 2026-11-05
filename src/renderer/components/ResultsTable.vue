@@ -80,7 +80,7 @@ function dateOf(iso) {
 
     <div class="glass-inset scroll-thin min-h-0 flex-1 overflow-auto">
       <table class="w-full text-[13px]">
-        <thead class="sticky top-0 bg-white/70 text-left text-[11px] font-semibold tracking-wide text-ink-muted uppercase backdrop-blur-xl">
+        <thead class="sticky top-0 bg-glass-raised text-left text-[11px] font-semibold tracking-wide text-ink-muted uppercase backdrop-blur-xl">
           <tr>
             <th class="px-3 py-2.5">İlan</th>
             <th class="px-3 py-2.5">Konum</th>
@@ -90,12 +90,12 @@ function dateOf(iso) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="record in pageRows" :key="record.id" class="border-t border-white/60 align-top transition-colors hover:bg-white/50">
+          <tr v-for="record in pageRows" :key="record.id" class="border-t border-row-line align-top transition-colors hover:bg-hover">
             <td class="px-3 py-2.5">
               <a href="#" class="font-semibold hover:underline" @click.prevent="emit('open', record.url)">{{ record.title }}</a>
               <div class="mt-0.5 text-[11px] text-ink-muted">
                 {{ record.categorySlug }} · {{ record.citySlug }}
-                <span v-if="record.sellerKind === 'unknown'" class="pill ml-1 bg-amber-100/80 text-amber-800">satıcı türü belirsiz</span>
+                <span v-if="record.sellerKind === 'unknown'" class="pill ml-1 bg-amber-400/20 text-amber-700 dark:text-amber-300">satıcı türü belirsiz</span>
               </div>
             </td>
             <td class="px-3 py-2.5 text-ink-muted">{{ record.location }}</td>

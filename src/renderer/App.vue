@@ -1,12 +1,13 @@
 <script setup>
 /**
  * Root component: loads the bootstrap payload from the main process, keeps
- * the shared state and lays the screen out as header, sidebar and content.
+ * the shared state, applies the colour scheme and lays the screen out as
+ * header, sidebar and content, with the settings dialog on top.
  */
-import { onMounted, onBeforeUnmount, reactive, ref } from "vue";
+import { computed, onMounted, onBeforeUnmount, reactive, ref, watch } from "vue";
 import AppHeader from "./components/AppHeader.vue";
 import SettingsPanel from "./components/SettingsPanel.vue";
-import UpdatePanel from "./components/UpdatePanel.vue";
+import SettingsDialog from "./components/SettingsDialog.vue";
 import ScanStatus from "./components/ScanStatus.vue";
 import ResultsTable from "./components/ResultsTable.vue";
 
@@ -20,11 +21,45 @@ const results = ref([]);
 const scanState = reactive({ running: false, nextRunAt: null });
 const events = ref([]);
 const updateStatus = ref({ state: "idle", message: "" });
+const settingsOpen = ref(false);
 
 /** Log lines kept in memory; older ones are dropped. */
 const MAX_EVENTS = 300;
 let nextEventId = 1;
 let unsubscribe = [];
+
+/* ---------- colour scheme ---------- */
+
+const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+const systemPrefersDark = ref(systemDark.matches);
+
+const themeChoice = computed(() => settings.value?.theme ?? "system");
+
+/** The scheme actually applied: the user's choice, or the OS setting for "system". */
+const resolvedTheme = computed(() => {
+  if (themeChoice.value === "system") {
+    return systemPrefersDark.value ? "dark" : "light";
+  }
+  return themeChoice.value;
+});
+
+watch(
+  resolvedTheme,
+  (theme) => {
+    document.documentElement.dataset.theme = theme;
+  },
+  { immediate: true }
+);
+
+function onSystemThemeChange(event) {
+  systemPrefersDark.value = event.matches;
+}
+
+async function setTheme(theme) {
+  settings.value = await bridge.updateSettings({ theme });
+}
+
+/* ---------- log ---------- */
 
 /**
  * Adds a log line at the top with a stable key for list rendering.
@@ -48,6 +83,12 @@ function pushEvent(event) {
 function note(level, message) {
   pushEvent({ level, message, at: new Date().toISOString() });
 }
+
+function clearLog() {
+  events.value = [];
+}
+
+/* ---------- data ---------- */
 
 /**
  * Pulls the initial state from the main process.
@@ -114,11 +155,10 @@ async function copyPhone(phone) {
   }
 }
 
-function clearLog() {
-  events.value = [];
-}
+/* ---------- lifecycle ---------- */
 
 onMounted(async () => {
+  systemDark.addEventListener("change", onSystemThemeChange);
   await load();
   unsubscribe = [
     bridge.onScanEvent((event) => {
@@ -142,6 +182,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  systemDark.removeEventListener("change", onSystemThemeChange);
   for (const stop of unsubscribe) {
     stop();
   }
@@ -156,10 +197,11 @@ onBeforeUnmount(() => {
       @open-site="bridge.openSite()"
       @start="bridge.startScan()"
       @stop="bridge.stopScan()"
+      @open-settings="settingsOpen = true"
     />
 
     <!-- Sidebar widens a step on large screens; the content column takes the rest. -->
-    <main class="grid min-h-0 flex-1 grid-cols-[360px_1fr] gap-4 p-4 2xl:grid-cols-[420px_1fr] 2xl:gap-5 2xl:p-5">
+    <main class="grid min-h-0 flex-1 grid-cols-[320px_1fr] gap-4 p-4 2xl:grid-cols-[380px_1fr] 2xl:gap-5 2xl:p-5">
       <aside class="scroll-thin flex min-h-0 flex-col gap-4 overflow-y-auto pr-1 pb-1">
         <SettingsPanel
           v-if="settings"
@@ -167,11 +209,6 @@ onBeforeUnmount(() => {
           :cities="cities"
           :categories="categories"
           @save="saveSettings"
-        />
-        <UpdatePanel
-          :status="updateStatus"
-          @check="bridge.checkForUpdates()"
-          @install="bridge.installUpdate()"
         />
       </aside>
 
@@ -191,5 +228,16 @@ onBeforeUnmount(() => {
         />
       </section>
     </main>
+
+    <SettingsDialog
+      v-if="settingsOpen"
+      :theme="themeChoice"
+      :update-status="updateStatus"
+      :version="version"
+      @close="settingsOpen = false"
+      @set-theme="setTheme"
+      @check-updates="bridge.checkForUpdates()"
+      @install-update="bridge.installUpdate()"
+    />
   </div>
 </template>

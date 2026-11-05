@@ -20,7 +20,11 @@ import { dirname } from "node:path";
  * @property {string} extraQuery Extra query string appended to every search URL.
  * @property {number} minDelaySeconds Smallest pause between two page loads.
  * @property {number} maxDelaySeconds Largest pause between two page loads.
+ * @property {"system" | "light" | "dark"} theme Colour scheme of the interface.
  */
+
+/** Accepted values of the theme setting. */
+export const THEMES = Object.freeze(["system", "light", "dark"]);
 
 /** @type {Settings} */
 export const DEFAULT_SETTINGS = Object.freeze({
@@ -31,7 +35,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   autoScan: true,
   extraQuery: "",
   minDelaySeconds: 4,
-  maxDelaySeconds: 9
+  maxDelaySeconds: 9,
+  theme: "system"
 });
 
 /**
@@ -60,7 +65,8 @@ export function sanitiseSettings(partial) {
     autoScan: Boolean(merged.autoScan),
     extraQuery: typeof merged.extraQuery === "string" ? merged.extraQuery.trim() : "",
     minDelaySeconds: minDelay,
-    maxDelaySeconds: Math.max(minDelay, clampInteger(merged.maxDelaySeconds, 2, 300, DEFAULT_SETTINGS.maxDelaySeconds))
+    maxDelaySeconds: Math.max(minDelay, clampInteger(merged.maxDelaySeconds, 2, 300, DEFAULT_SETTINGS.maxDelaySeconds)),
+    theme: THEMES.includes(merged.theme) ? merged.theme : DEFAULT_SETTINGS.theme
   };
 }
 

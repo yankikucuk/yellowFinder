@@ -168,6 +168,16 @@ function attachSmokeTest(window) {
     process.stdout.write(`[renderer:load-failed] ${code} ${description}\n`);
   });
   setTimeout(async () => {
+    // YELLOWFINDER_SMOKE_CLICK=<css selector> clicks an element (for example the settings gear) before the screenshot.
+    const clickSelector = process.env.YELLOWFINDER_SMOKE_CLICK;
+    if (clickSelector) {
+      const found = await window.webContents.executeJavaScript(
+        `(() => { const element = document.querySelector(${JSON.stringify(clickSelector)}); if (element) { element.click(); } return Boolean(element); })()`,
+        true
+      );
+      process.stdout.write(`smoke click ${clickSelector}: ${found ? "clicked" : "not found"}\n`);
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
     // YELLOWFINDER_SMOKE_SCREENSHOT=<file.png> saves the control window for a visual check.
     const screenshotPath = process.env.YELLOWFINDER_SMOKE_SCREENSHOT;
     if (screenshotPath) {

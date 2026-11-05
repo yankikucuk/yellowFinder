@@ -23,3 +23,9 @@ test("settings survive a round trip through disk", () => {
   assert.equal(reloaded.intervalMinutes, DEFAULT_SETTINGS.intervalMinutes);
 });
 
+
+test("theme accepts only the known values", () => {
+  assert.equal(sanitiseSettings({ theme: "dark" }).theme, "dark");
+  assert.equal(sanitiseSettings({ theme: "purple" }).theme, "system");
+  assert.equal(sanitiseSettings({}).theme, "system");
+});

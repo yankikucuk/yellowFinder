@@ -59,7 +59,7 @@ function clearAll() {
       <button
         v-for="city in selectedCities"
         :key="city.slug"
-        class="pill bg-brand-400/80 text-ink transition-colors hover:bg-brand-400"
+        class="pill bg-brand-400/90 text-[#1d1d1f] transition-colors hover:bg-brand-400"
         type="button"
         :title="`${city.label} seçimini kaldır`"
         @click="toggle(city.slug)"
@@ -67,7 +67,7 @@ function clearAll() {
         {{ city.label }}
         <i class="fa-solid fa-xmark text-[10px] opacity-60" aria-hidden="true"></i>
       </button>
-      <button v-if="selectedCities.length > 1" class="pill-glass hover:bg-white/80" type="button" @click="clearAll">
+      <button v-if="selectedCities.length > 1" class="pill-glass hover:bg-hover" type="button" @click="clearAll">
         Tümünü kaldır
       </button>
     </div>
